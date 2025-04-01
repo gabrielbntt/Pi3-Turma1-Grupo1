@@ -58,6 +58,14 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.firebase.bom)
+    // libs do firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.11.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    //Firestore
+    implementation("com.google.firebase:firebase-firestore-ktx:25.1.3")
+    // Auth
+    implementation("com.google.firebase:firebase-auth-ktx:23.2.0")
+    // Crash
+    implementation ("com.google.firebase:firebase-crashlytics-ktx:19.4.2")
 }
