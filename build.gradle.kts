@@ -2,17 +2,16 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
     id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.puccamp.pi3_time1"
+    namespace = "br.edu.puc.pi3_time1"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.puccamp.pi3_time1"
-        minSdk = 33
+        applicationId = "br.edu.puc.pi3_time1"
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -53,8 +52,6 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.common.ktx)
     implementation(libs.androidx.storage)
-    implementation(libs.androidx.storage)
-    implementation(libs.androidx.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -63,8 +60,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
-    // libs do firebase
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
     implementation(libs.firebase.analytics)
 
