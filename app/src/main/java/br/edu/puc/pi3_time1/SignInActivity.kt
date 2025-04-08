@@ -41,6 +41,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 
 class SignInActivity : ComponentActivity() {
@@ -169,7 +171,8 @@ fun SignIn(modifier: Modifier = Modifier, activity: SignInActivity?) {
                         }
                     },
                     modifier = Modifier
-                        .wrapContentWidth()
+                        .width(150.dp) // Largura fixa
+                        .height(48.dp)
                         .padding(bottom = 16.dp),
                     enabled = !isLoading
                 ) {

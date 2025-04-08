@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,13 +68,20 @@ fun SignUpPreview() {
     }
 }
 @Composable
-    fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity){
+fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rg by remember { mutableStateOf("") }
     var cpf by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+
+    val isNameValid = name.isNotEmpty()
+    val isEmailValid = email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isPasswordValid = password.length >= 6
+    val isRgValid = rg.isNotEmpty()
+    val isCpfValid = cpf.isNotEmpty()
+    val isFormValid = isNameValid && isEmailValid && isPasswordValid && isRgValid && isCpfValid
 
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -85,35 +93,68 @@ fun SignUpPreview() {
             modifier = Modifier.padding(10.dp),
             value = name,
             onValueChange = { name = it },
-            label = { Text("Nome") }
+            label = { Text("Nome") },
+            isError = name.isNotEmpty() && !isNameValid,
+            supportingText = {
+                if (name.isNotEmpty() && !isNameValid) {
+                    Text("O nome não pode estar vazio")
+                }
+            }
         )
         OutlinedTextField(
             modifier = Modifier.padding(10.dp),
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") }
+            label = { Text("Email") },
+            isError = email.isNotEmpty() && !isEmailValid,
+            supportingText = {
+                if (email.isNotEmpty() && !isEmailValid) {
+                    Text("Email inválido")
+                }
+            }
         )
         OutlinedTextField(
             modifier = Modifier.padding(10.dp),
             value = password,
             onValueChange = { password = it },
-            label = { Text("Senha") }
+            label = { Text("Senha") },
+            visualTransformation = PasswordVisualTransformation(),
+            isError = password.isNotEmpty() && !isPasswordValid,
+            supportingText = {
+                if (password.isNotEmpty() && !isPasswordValid) {
+                    Text("A senha deve ter pelo menos 6 caracteres")
+                }
+            }
         )
         OutlinedTextField(
             modifier = Modifier.padding(10.dp),
             value = rg,
             onValueChange = { rg = it },
-            label = { Text("RG") }
+            label = { Text("RG") },
+            isError = rg.isNotEmpty() && !isRgValid,
+            supportingText = {
+                if (rg.isNotEmpty() && !isRgValid) {
+                    Text("O RG não pode estar vazio")
+                }
+            }
         )
         OutlinedTextField(
             modifier = Modifier.padding(10.dp),
             value = cpf,
             onValueChange = { cpf = it },
-            label = { Text("CPF") }
+            label = { Text("CPF") },
+            isError = cpf.isNotEmpty() && !isCpfValid,
+            supportingText = {
+                if (cpf.isNotEmpty() && !isCpfValid) {
+                    Text("O CPF não pode estar vazio")
+                }
+            }
         )
         Button(
             onClick = {
-                if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty() && rg.isNotEmpty() && cpf.isNotEmpty()) {
+                if (!isFormValid) {
+                    message = "Corrija os erros nos campos."
+                } else {
                     createNewAccount(
                         activity = activity,
                         email = email,
@@ -134,8 +175,6 @@ fun SignUpPreview() {
                             message = "Erro ao criar conta: ${e.message}"
                         }
                     )
-                } else {
-                    message = "Preencha todos os campos."
                 }
             }
         ) {
@@ -144,10 +183,19 @@ fun SignUpPreview() {
         Button(
             onClick = {
                 activity.startActivity(Intent(activity, WelcomeActivity::class.java))
-            }){
+            }
+        ) {
             Text("Voltar ao menu")
         }
-    } }
+        if (message.isNotEmpty()) {
+            Text(
+                text = message,
+                modifier = Modifier.padding(top = 16.dp),
+                fontSize = 14.sp
+            )
+        }
+    }
+}
     fun createNewAccount(
         activity: SignUpActivity,
         email: String,
@@ -162,20 +210,32 @@ fun SignUpPreview() {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(activity) { task ->
                 if (task.isSuccessful) {
-                    val userId = auth.currentUser?.uid
-                    if (userId != null) {
-                        saveAccountToFirebase(
-                            userId = userId,
-                            name = name,
-                            email = email,
-                            rg = rg,
-                            cpf = cpf,
-                            onSuccess = onSuccess,
-                            onFailure = onFailure
-                        )
-                    } else {
-                        onFailure(Exception("UID do usuário não encontrado"))
-                    }
+                    val user = auth.currentUser
+                    // Atualiza o displayName do usuário
+                    val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                        .setDisplayName(name)
+                        .build()
+                    user?.updateProfile(profileUpdates)
+                        ?.addOnCompleteListener { profileTask ->
+                            if (profileTask.isSuccessful) {
+                                val userId = user.uid
+                                if (true) {
+                                    saveAccountToFirebase(
+                                        userId = userId,
+                                        name = name,
+                                        email = email,
+                                        rg = rg,
+                                        cpf = cpf,
+                                        onSuccess = onSuccess,
+                                        onFailure = onFailure
+                                    )
+                                } else {
+                                    onFailure(Exception("UID do usuário não encontrado"))
+                                }
+                            } else {
+                                onFailure(profileTask.exception ?: Exception("Erro ao atualizar o nome"))
+                            }
+                        }
                 } else {
                     onFailure(task.exception ?: Exception("Erro desconhecido ao criar conta"))
                 }
