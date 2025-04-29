@@ -1,59 +1,69 @@
-    package br.edu.puc.pi3_time1
+package br.edu.puc.pi3_time1
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.edu.puc.pi3_time1.WelcomeActivity
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.util.Base64
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 
-
-    class SignUpActivity : ComponentActivity() {
-        private lateinit var auth: FirebaseAuth
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            FirebaseApp.initializeApp(this)
-            auth = Firebase.auth
-            enableEdgeToEdge()
-            setContent {
-                Pi3_time1Theme{
+class SignUpActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        auth = Firebase.auth
+        enableEdgeToEdge()
+        setContent {
+            Pi3_time1Theme {
                 SignUp(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .wrapContentSize(Alignment.Center),
-                        activity = this@SignUpActivity // Passe a Activity para o Composable
-                    )
-                }
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentSize(Alignment.Center),
+                    activity = this@SignUpActivity
+                )
             }
         }
     }
+}
 
 @Preview(showBackground = true)
 @Composable
@@ -63,25 +73,37 @@ fun SignUpPreview() {
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
-            activity = SignUpActivity() // Apenas para preview, não funcional
+            activity = SignUpActivity()
         )
     }
 }
+
 @Composable
 fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var rg by remember { mutableStateOf("") }
-    var cpf by remember { mutableStateOf("") }
+    var confirmpassword by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var imei by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+
+    // Obter o identificador do dispositivo quando o Composable é inicializado
+    LaunchedEffect(key1 = true) {
+        imei = getImei(context)
+        if (imei != null) {
+            Log.d("SignUpActivity", "Identificador obtido com sucesso: $imei")
+        } else {
+            Log.w("SignUpActivity", "Falha ao obter identificador")
+        }
+    }
 
     val isNameValid = name.isNotEmpty()
     val isEmailValid = email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    val isPasswordValid = password.length >= 6
-    val isRgValid = rg.isNotEmpty()
-    val isCpfValid = cpf.isNotEmpty()
-    val isFormValid = isNameValid && isEmailValid && isPasswordValid && isRgValid && isCpfValid
+    val isPasswordValid = password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,}$"))
+    val isFormValid = isNameValid && isEmailValid && isPasswordValid && imei != null
 
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -118,61 +140,65 @@ fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
             value = password,
             onValueChange = { password = it },
             label = { Text("Senha") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha"
+                    )
+                }
+            },
             isError = password.isNotEmpty() && !isPasswordValid,
             supportingText = {
                 if (password.isNotEmpty() && !isPasswordValid) {
-                    Text("A senha deve ter pelo menos 6 caracteres")
+                    Text("A senha deve ter no mínimo uma minúscula, uma maiúscula e um número")
                 }
             }
         )
         OutlinedTextField(
             modifier = Modifier.padding(10.dp),
-            value = rg,
-            onValueChange = { rg = it },
-            label = { Text("RG") },
-            isError = rg.isNotEmpty() && !isRgValid,
+            value = confirmpassword,
+            onValueChange = { confirmpassword = it },
+            label = { Text("Confirmar Senha") },
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha"
+                    )
+                }
+            },
+            isError = confirmpassword.isNotEmpty() && confirmpassword !=password && !isPasswordValid,
             supportingText = {
-                if (rg.isNotEmpty() && !isRgValid) {
-                    Text("O RG não pode estar vazio")
+                if (confirmpassword.isNotEmpty() && !isPasswordValid) {
+                    Text("As senhas não são iguais")
                 }
             }
         )
-        OutlinedTextField(
-            modifier = Modifier.padding(10.dp),
-            value = cpf,
-            onValueChange = { cpf = it },
-            label = { Text("CPF") },
-            isError = cpf.isNotEmpty() && !isCpfValid,
-            supportingText = {
-                if (cpf.isNotEmpty() && !isCpfValid) {
-                    Text("O CPF não pode estar vazio")
-                }
-            }
-        )
+
         Button(
             onClick = {
                 if (!isFormValid) {
-                    message = "Corrija os erros nos campos."
+                    message = "Corrija os erros nos campos ou aguarde a obtenção do identificador."
                 } else {
                     createNewAccount(
                         activity = activity,
                         email = email,
                         password = password,
                         name = name,
-                        rg = rg,
-                        cpf = cpf,
+                        imei = imei!!, // imei já foi validado em isFormValid
                         onSuccess = {
-                            message = "Conta criada com sucesso!"
+                            message = "Conta criada! Verifique seu email."
                             name = ""
                             email = ""
                             password = ""
-                            rg = ""
-                            cpf = ""
                             activity.startActivity(Intent(activity, MainActivity::class.java))
                         },
                         onFailure = { e ->
                             message = "Erro ao criar conta: ${e.message}"
+                            Log.e("SignUpActivity", "Erro ao criar conta", e)
                         }
                     )
                 }
@@ -196,73 +222,99 @@ fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
         }
     }
 }
-    fun createNewAccount(
-        activity: SignUpActivity,
-        email: String,
-        password: String,
-        name: String,
-        rg: String,
-        cpf: String,
-        onSuccess: () -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        val auth = Firebase.auth
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener(activity) { task ->
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    // Atualiza o displayName do usuário
-                    val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
-                        .setDisplayName(name)
-                        .build()
-                    user?.updateProfile(profileUpdates)
-                        ?.addOnCompleteListener { profileTask ->
-                            if (profileTask.isSuccessful) {
-                                val userId = user.uid
-                                if (true) {
-                                    saveAccountToFirebase(
-                                        userId = userId,
-                                        name = name,
-                                        email = email,
-                                        rg = rg,
-                                        cpf = cpf,
-                                        onSuccess = onSuccess,
-                                        onFailure = onFailure
-                                    )
-                                } else {
-                                    onFailure(Exception("UID do usuário não encontrado"))
+
+fun getImei(context: Context): String {
+    // Retorna o ANDROID_ID como identificador do dispositivo
+    return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+}
+
+fun hashPassword(password: String): String {
+    val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+    val saltedPassword = password + Base64.getEncoder().encodeToString(salt)
+    val digest = MessageDigest.getInstance("SHA-256")
+    val hash = digest.digest(saltedPassword.toByteArray())
+    return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash)
+}
+
+fun createNewAccount(
+    activity: SignUpActivity,
+    email: String,
+    password: String,
+    name: String,
+    imei: String,
+    onSuccess: () -> Unit,
+    onFailure: (Exception) -> Unit
+) {
+    val auth = Firebase.auth
+    val hashedPassword = hashPassword(password)
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .addOnCompleteListener(activity) { task ->
+            if (task.isSuccessful) {
+                val user = auth.currentUser
+                user?.sendEmailVerification()
+                    ?.addOnCompleteListener { emailTask ->
+                        if (emailTask.isSuccessful) {
+                            val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                                .setDisplayName(name)
+                                .build()
+                            user.updateProfile(profileUpdates)
+                                .addOnCompleteListener { profileTask ->
+                                    if (profileTask.isSuccessful) {
+                                        val userId = user.uid
+                                        saveAccountToFirebase(
+                                            userId = userId,
+                                            name = name,
+                                            email = email,
+                                            hashedPassword = hashedPassword,
+                                            imei = imei,
+                                            onSuccess = onSuccess,
+                                            onFailure = onFailure
+                                        )
+                                    } else {
+                                        onFailure(profileTask.exception ?: Exception("Erro ao atualizar o nome"))
+                                        Log.e("SignUpActivity", "Erro ao atualizar perfil", profileTask.exception)
+                                    }
                                 }
-                            } else {
-                                onFailure(profileTask.exception ?: Exception("Erro ao atualizar o nome"))
-                            }
+                        } else {
+                            onFailure(emailTask.exception ?: Exception("Erro ao enviar email de verificação"))
+                            Log.e("SignUpActivity", "Erro ao enviar email de verificação", emailTask.exception)
                         }
-                } else {
-                    onFailure(task.exception ?: Exception("Erro desconhecido ao criar conta"))
-                }
+                    }
+            } else {
+                onFailure(task.exception ?: Exception("Erro desconhecido ao criar conta"))
+                Log.e("SignUpActivity", "Erro ao criar conta no Firebase Auth", task.exception)
             }
-    }
-    fun saveAccountToFirebase(
-        userId: String,
-        name: String,
-        email: String,
+        }
+}
 
-        rg: String,
-        cpf: String,
-        onSuccess: () -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        val db = Firebase.firestore
-        val newAccount = hashMapOf(
-            "name" to name,
-            "email" to email,
-            "rg" to rg,
-            "cpf" to cpf,
-            "uid" to userId
-        )
+fun saveAccountToFirebase(
+    userId: String,
+    name: String,
+    email: String,
+    hashedPassword: String,
+    imei: String,
+    onSuccess: () -> Unit,
+    onFailure: (Exception) -> Unit
+) {
+    val db = Firebase.firestore
+    val newAccount = hashMapOf(
+        "name" to name,
+        "email" to email,
+        "uid" to userId,
+        "password" to hashedPassword,
+        "imei" to imei
+    )
 
-        db.collection("Users")
-            .document(userId) // Usa o UID como ID do documento
-            .set(newAccount)
-            .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { e -> onFailure(e) }
-    }
+    db.collection("Users")
+        .document(userId)
+        .set(newAccount)
+        .addOnSuccessListener {
+            Log.d("SignUpActivity", "Dados salvos no Firestore com sucesso")
+            onSuccess()
+        }
+        .addOnFailureListener { e ->
+            Log.e("SignUpActivity", "Erro ao salvar no Firestore", e)
+            onFailure(e)
+        }
+}
