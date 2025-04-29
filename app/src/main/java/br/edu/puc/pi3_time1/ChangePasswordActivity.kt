@@ -62,10 +62,12 @@ fun GreetingPreview2() {
     }
 }
 @Composable
-fun ChangePassword(modifier: Modifier = Modifier, activity: ChangePasswordActivity?)  {
+fun ChangePassword(modifier: Modifier = Modifier, activity: ChangePasswordActivity?) {
     var email by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
     val auth = FirebaseAuth.getInstance()
+
+    // Função para validar o e-mail
     fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
@@ -102,7 +104,6 @@ fun ChangePassword(modifier: Modifier = Modifier, activity: ChangePasswordActivi
                     }
                 )
 
-                // Texto clicável estilizado (substituindo o Button)
                 Button(
                     onClick = {
                         if (email.isEmpty()) {
@@ -110,7 +111,7 @@ fun ChangePassword(modifier: Modifier = Modifier, activity: ChangePasswordActivi
                         } else if (!isValidEmail(email)) {
                             message = "Por favor, insira um e-mail válido!"
                         } else {
-                            sendEmail(auth, email) { resultMessage ->
+                            sendEmail(auth, email, activity) { resultMessage ->
                                 message = resultMessage
                             }
                         }
@@ -125,7 +126,6 @@ fun ChangePassword(modifier: Modifier = Modifier, activity: ChangePasswordActivi
                     )
                 }
 
-                // Exibe a mensagem de feedback (erro ou sucesso)
                 if (message.isNotEmpty()) {
                     Text(
                         text = message,
@@ -139,11 +139,14 @@ fun ChangePassword(modifier: Modifier = Modifier, activity: ChangePasswordActivi
 }
 
 // Função para enviar o e-mail de redefinição de senha
-fun sendEmail(auth: FirebaseAuth, email: String, onResult: (String) -> Unit) {
+fun sendEmail(auth: FirebaseAuth, email: String, activity: ChangePasswordActivity?, onResult: (String) -> Unit) {
     auth.sendPasswordResetEmail(email)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 onResult("E-mail de redefinição enviado para $email")
+                // Redireciona para a tela de login
+                activity?.startActivity(Intent(activity, SignInActivity::class.java))
+                activity?.finish() // Fecha a ChangePasswordActivity
             } else {
                 onResult("Falha ao enviar o e-mail: ${task.exception?.message}")
             }
