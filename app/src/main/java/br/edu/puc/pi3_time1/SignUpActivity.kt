@@ -288,6 +288,23 @@ fun createNewAccount(
         }
 }
 
+fun setupDefaultCategories(uid: String, categoryName: String) {
+    val db = Firebase.firestore
+    val vazio = hashMapOf("placeholder" to true)
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .add(vazio)
+        .addOnSuccessListener { documentReference ->
+            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+        }
+}
+
+
 fun saveAccountToFirebase(
     userId: String,
     name: String,
@@ -312,6 +329,9 @@ fun saveAccountToFirebase(
         .addOnSuccessListener {
             Log.d("SignUpActivity", "Dados salvos no Firestore com sucesso")
             onSuccess()
+            setupDefaultCategories(userId, "SitesWeb")
+            setupDefaultCategories(userId, "Aplicativos")
+            setupDefaultCategories(userId, "TecladosDeAcessoFísico")
         }
         .addOnFailureListener { e ->
             Log.e("SignUpActivity", "Erro ao salvar no Firestore", e)
