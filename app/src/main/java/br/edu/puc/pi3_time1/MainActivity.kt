@@ -17,6 +17,7 @@ import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 
@@ -94,7 +95,7 @@ fun savePasswordEntry(uid: String, categoryName: String, title: String, username
         }
 }
 
-fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fieldToUpdate: String, newValue: Any) {
+fun searchDocumentByTitle(uid: String, categoryName: String, title: String, action: (DocumentSnapshot) -> Unit) {
     val db = Firebase.firestore
 
     db.collection("Collections")
@@ -104,19 +105,12 @@ fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fiel
         .get()
         .addOnSuccessListener { querySnapshot ->
             if (querySnapshot.isEmpty) {
-                Log.w("Firestore", "Nenhuma senha com o título: $title")
+                Log.w("Firestore", "Nenhuma senha encontrada com título: $title")
                 return@addOnSuccessListener
             }
 
             for (document in querySnapshot.documents) {
-                document.reference
-                    .update(fieldToUpdate, newValue)
-                    .addOnSuccessListener {
-                        Log.d("Firestore", "Campo '$fieldToUpdate' atualizado com sucesso!")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("Firestore", "Erro ao atualizar: ${e.message}")
-                    }
+                action(document)
             }
         }
         .addOnFailureListener { e ->
@@ -124,34 +118,31 @@ fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fiel
         }
 }
 
+
+fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fieldToUpdate: String, newValue: Any) {
+    searchDocumentByTitle(uid, categoryName, title) { document ->
+        document.reference
+            .update(fieldToUpdate, newValue)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Campo '$fieldToUpdate' atualizado com sucesso!")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao atualizar campo: ${e.message}")
+            }
+    }
+}
+
 fun deletePasswordByTitle(uid: String, categoryName: String, title: String) {
-    val db = Firebase.firestore
-
-    db.collection("Collections")
-        .document(uid)
-        .collection(categoryName)
-        .whereEqualTo("title", title)
-        .get()
-        .addOnSuccessListener { querySnapshot ->
-            if (querySnapshot.isEmpty) {
-                Log.w("Firestore", "Nenhuma senha com o título: $title encontrada para exclusão.")
-                return@addOnSuccessListener
+    searchDocumentByTitle(uid, categoryName, title) { document ->
+        document.reference
+            .delete()
+            .addOnSuccessListener {
+                Log.d("Firestore", "Senha '$title' excluída com sucesso!")
             }
-
-            for (document in querySnapshot.documents) {
-                document.reference
-                    .delete()
-                    .addOnSuccessListener {
-                        Log.d("Firestore", "Senha '$title' excluída com sucesso!")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("Firestore", "Erro ao excluir senha: ${e.message}")
-                    }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao excluir senha: ${e.message}")
             }
-        }
-        .addOnFailureListener { e ->
-            Log.e("Firestore", "Erro ao buscar senha para exclusão: ${e.message}")
-        }
+    }
 }
 
 
@@ -174,6 +165,8 @@ fun PasswordManagerScreen() {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    deletePasswordByTitle("ohY8N4QWWFhQazqP2D0SX8BBD2m1", "Jogos", "Netflix")
+
 
 
     val samplePasswords = List(5) { index ->
