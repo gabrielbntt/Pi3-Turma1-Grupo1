@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -20,8 +19,9 @@ import kotlinx.coroutines.launch
 
 data class PasswordEntry(
     val title: String,
-    val username: String,
-    val password: String
+    val username: String?,
+    val password: String,
+    val description: String?
 )
 
 class MainActivity : ComponentActivity() {
@@ -48,13 +48,14 @@ fun PasswordManagerScreen() {
         PasswordEntry(
             title = "Serviço ${index + 1}",
             username = "usuario$index@exemplo.com",
-            password = "senhaSegura$index"
+            password = "senhaSegura$index",
+            description = "bla bla bla bla"
         )
     }
 
     val filteredPasswords = samplePasswords.filter {
         it.title.contains(searchQuery.text, ignoreCase = true) ||
-                it.username.contains(searchQuery.text, ignoreCase = true)
+                it.username?.contains(searchQuery.text, ignoreCase = true) == true
     }
 
     ModalNavigationDrawer(
@@ -149,6 +150,10 @@ fun PasswordCard(password: PasswordEntry) {
             )
             Text(
                 text = "Senha: ******", // Mascarado por padrão
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Descrição: ${password.description}", // Mascarado por padrão
                 style = MaterialTheme.typography.bodyMedium
             )
         }
