@@ -27,21 +27,36 @@ data class PasswordEntry(
     val description: String?
 )
 
-fun createCategory(uid: String, categoryName: String) {
+fun deleteCategory(uid: String, categoryName: String) {
+    if (categoryName == "SitesWeb") {
+        Log.w("Firestore", "A categoria 'SitesWeb' não pode ser excluída.")
+        return
+    }
+
     val db = Firebase.firestore
-    val vazio = hashMapOf("placeholder" to true)
 
     db.collection("Collections")
         .document(uid)
         .collection(categoryName)
-        .add(vazio)
-        .addOnSuccessListener { documentReference ->
-            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            val batch = db.batch()
+            for (document in querySnapshot.documents) {
+                batch.delete(document.reference)
+            }
+            batch.commit()
+                .addOnSuccessListener {
+                    Log.d("Firestore", "Categoria '$categoryName' excluída com sucesso.")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Erro ao excluir documentos da categoria '$categoryName': ${e.message}")
+                }
         }
         .addOnFailureListener { e ->
-            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+            Log.e("Firestore", "Erro ao acessar categoria '$categoryName': ${e.message}")
         }
 }
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

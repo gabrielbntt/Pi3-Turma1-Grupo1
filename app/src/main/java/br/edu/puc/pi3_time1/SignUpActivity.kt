@@ -288,7 +288,7 @@ fun createNewAccount(
         }
 }
 
-fun setupDefaultCategories(uid: String, categoryName: String) {
+fun createCategory(uid: String, categoryName: String) {
     val db = Firebase.firestore
     val vazio = hashMapOf("placeholder" to true)
 
@@ -329,9 +329,9 @@ fun saveAccountToFirebase(
         .addOnSuccessListener {
             Log.d("SignUpActivity", "Dados salvos no Firestore com sucesso")
             onSuccess()
-            setupDefaultCategories(userId, "SitesWeb")
-            setupDefaultCategories(userId, "Aplicativos")
-            setupDefaultCategories(userId, "TecladosDeAcessoFísico")
+            createCategory(userId, "SitesWeb")
+            createCategory(userId, "Aplicativos")
+            createCategory(userId, "TecladosDeAcessoFísico")
         }
         .addOnFailureListener { e ->
             Log.e("SignUpActivity", "Erro ao salvar no Firestore", e)
