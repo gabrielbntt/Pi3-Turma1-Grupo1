@@ -73,6 +73,27 @@ fun deleteCategory(uid: String, categoryName: String) {
         }
 }
 
+fun savePasswordEntry(uid: String, categoryName: String, title: String, username: String?, password: String, description: String?) {
+    val db = Firebase.firestore
+    val entry = PasswordEntry(
+        title,
+        username,
+        password,
+        description
+    )
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .add(entry)
+        .addOnSuccessListener { documentReference ->
+            Log.d("Firestore", "Entrada de senha salva com ID: ${documentReference.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao salvar entrada de senha: ${e.message}")
+        }
+}
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,6 +114,9 @@ fun PasswordManagerScreen() {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    createCategory("ohY8N4QWWFhQazqP2D0SX8BBD2m1","Jogos")
+    savePasswordEntry("ohY8N4QWWFhQazqP2D0SX8BBD2m1", "Jogos", "Netflix", "usuario@email.com", "minhaSenhaForte@2025", "Conta pessoal de streaming")
+
 
     val samplePasswords = List(5) { index ->
         PasswordEntry(
