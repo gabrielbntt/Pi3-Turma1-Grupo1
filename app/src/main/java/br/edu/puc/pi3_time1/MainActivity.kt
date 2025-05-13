@@ -1,6 +1,7 @@
 package br.edu.puc.pi3_time1
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 
 data class PasswordEntry(
@@ -23,6 +26,22 @@ data class PasswordEntry(
     val password: String,
     val description: String?
 )
+
+fun createCategory(uid: String, categoryName: String) {
+    val db = Firebase.firestore
+    val vazio = hashMapOf("placeholder" to true)
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .add(vazio)
+        .addOnSuccessListener { documentReference ->
+            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+        }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
