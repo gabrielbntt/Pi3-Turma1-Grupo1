@@ -27,6 +27,22 @@ data class PasswordEntry(
     val description: String?
 )
 
+fun createCategory(uid: String, categoryName: String) {
+    val db = Firebase.firestore
+    val vazio = hashMapOf("placeholder" to true)
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .add(vazio)
+        .addOnSuccessListener { documentReference ->
+            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+        }
+}
+
 fun deleteCategory(uid: String, categoryName: String) {
     if (categoryName == "SitesWeb") {
         Log.w("Firestore", "A categoria 'SitesWeb' não pode ser excluída.")
