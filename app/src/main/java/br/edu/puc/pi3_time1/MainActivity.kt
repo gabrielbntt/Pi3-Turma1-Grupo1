@@ -94,6 +94,36 @@ fun savePasswordEntry(uid: String, categoryName: String, title: String, username
         }
 }
 
+fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fieldToUpdate: String, newValue: Any) {
+    val db = Firebase.firestore
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .whereEqualTo("title", title)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            if (querySnapshot.isEmpty) {
+                Log.w("Firestore", "Nenhuma senha com o título: $title")
+                return@addOnSuccessListener
+            }
+
+            for (document in querySnapshot.documents) {
+                document.reference
+                    .update(fieldToUpdate, newValue)
+                    .addOnSuccessListener {
+                        Log.d("Firestore", "Campo '$fieldToUpdate' atualizado com sucesso!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore", "Erro ao atualizar: ${e.message}")
+                    }
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao buscar senha: ${e.message}")
+        }
+}
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,8 +144,7 @@ fun PasswordManagerScreen() {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    createCategory("ohY8N4QWWFhQazqP2D0SX8BBD2m1","Jogos")
-    savePasswordEntry("ohY8N4QWWFhQazqP2D0SX8BBD2m1", "Jogos", "Netflix", "usuario@email.com", "minhaSenhaForte@2025", "Conta pessoal de streaming")
+    updatePasswordByTitle("ohY8N4QWWFhQazqP2D0SX8BBD2m1", "Jogos", "Netflix", "password", "novaSenhaUltraForte")
 
 
     val samplePasswords = List(5) { index ->
