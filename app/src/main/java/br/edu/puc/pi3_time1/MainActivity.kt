@@ -79,7 +79,7 @@ fun savePasswordEntry(uid: String, categoryName: String, title: String, username
     val entry = PasswordEntry(
         title,
         username,
-        password,
+        hashPassword(password),
         description
     )
 
@@ -121,8 +121,14 @@ fun searchDocumentByTitle(uid: String, categoryName: String, title: String, acti
 
 fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fieldToUpdate: String, newValue: Any) {
     searchDocumentByTitle(uid, categoryName, title) { document ->
+        val valueToUpdate = if (fieldToUpdate == "password" && newValue is String) {
+            hashPassword(newValue)
+        } else {
+            newValue
+        }
+
         document.reference
-            .update(fieldToUpdate, newValue)
+            .update(fieldToUpdate, valueToUpdate)
             .addOnSuccessListener {
                 Log.d("Firestore", "Campo '$fieldToUpdate' atualizado com sucesso!")
             }
@@ -165,7 +171,6 @@ fun PasswordManagerScreen() {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    deletePasswordByTitle("ohY8N4QWWFhQazqP2D0SX8BBD2m1", "Jogos", "Netflix")
 
 
 
