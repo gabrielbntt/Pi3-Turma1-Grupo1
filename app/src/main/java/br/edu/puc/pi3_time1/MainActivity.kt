@@ -124,6 +124,36 @@ fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fiel
         }
 }
 
+fun deletePasswordByTitle(uid: String, categoryName: String, title: String) {
+    val db = Firebase.firestore
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .whereEqualTo("title", title)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            if (querySnapshot.isEmpty) {
+                Log.w("Firestore", "Nenhuma senha com o título: $title encontrada para exclusão.")
+                return@addOnSuccessListener
+            }
+
+            for (document in querySnapshot.documents) {
+                document.reference
+                    .delete()
+                    .addOnSuccessListener {
+                        Log.d("Firestore", "Senha '$title' excluída com sucesso!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore", "Erro ao excluir senha: ${e.message}")
+                    }
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao buscar senha para exclusão: ${e.message}")
+        }
+}
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -144,7 +174,6 @@ fun PasswordManagerScreen() {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    updatePasswordByTitle("ohY8N4QWWFhQazqP2D0SX8BBD2m1", "Jogos", "Netflix", "password", "novaSenhaUltraForte")
 
 
     val samplePasswords = List(5) { index ->
