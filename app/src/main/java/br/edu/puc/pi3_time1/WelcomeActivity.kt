@@ -56,7 +56,11 @@ class WelcomeActivity : ComponentActivity() {
                         .wrapContentSize(Alignment.Center),
                     onNavigateToSignIn = {
                         startActivity(Intent(this@WelcomeActivity, SignInActivity::class.java))
+                    },
+                    onNavigateToSignUp = {
+                        startActivity(Intent(this@WelcomeActivity, SignUpActivity::class.java))
                     }
+
                 )
             }
         }
@@ -72,11 +76,12 @@ fun  WelcomeScreenPreview() {
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
             onNavigateToSignIn = { /* No-op for preview */ },
+            onNavigateToSignUp = { /* No-op for preview */ },
         )
     }
 }
 @Composable
-fun  WelcomeScreen( modifier: Modifier = Modifier, onNavigateToSignIn: () -> Unit) {
+fun  WelcomeScreen( modifier: Modifier = Modifier, onNavigateToSignIn: () -> Unit, onNavigateToSignUp: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -92,12 +97,21 @@ fun  WelcomeScreen( modifier: Modifier = Modifier, onNavigateToSignIn: () -> Uni
         )
         Spacer(modifier = Modifier.height(24.dp))
         Button(
+            onClick = { onNavigateToSignUp() },
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(48.dp),
+        ) {
+            Text("Cadastrar")
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
             onClick = { onNavigateToSignIn() },
             modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .height(48.dp),
         ) {
-            Text("Fazer Login")
+            Text("Logar")
         }
     }
 }

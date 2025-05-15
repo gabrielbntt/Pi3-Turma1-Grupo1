@@ -1,145 +1,297 @@
 package br.edu.puc.pi3_time1
 
-import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.launch
+
+data class PasswordEntry(
+    val title: String,
+    val username: String?,
+    val password: String,
+    val description: String?
+)
+
+fun createCategory(uid: String, categoryName: String) {
+    val db = Firebase.firestore
+    val vazio = hashMapOf("placeholder" to true)
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .add(vazio)
+        .addOnSuccessListener { documentReference ->
+            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+        }
+}
+
+fun deleteCategory(uid: String, categoryName: String) {
+    if (categoryName == "SitesWeb") {
+        Log.w("Firestore", "A categoria 'SitesWeb' não pode ser excluída.")
+        return
+    }
+
+    val db = Firebase.firestore
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            val batch = db.batch()
+            for (document in querySnapshot.documents) {
+                batch.delete(document.reference)
+            }
+            batch.commit()
+                .addOnSuccessListener {
+                    Log.d("Firestore", "Categoria '$categoryName' excluída com sucesso.")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Erro ao excluir documentos da categoria '$categoryName': ${e.message}")
+                }
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao acessar categoria '$categoryName': ${e.message}")
+        }
+}
+
+fun savePasswordEntry(uid: String, categoryName: String, title: String, username: String?, password: String, description: String?) {
+    val db = Firebase.firestore
+    val entry = PasswordEntry(
+        title,
+        username,
+        hashPassword(password),
+        description
+    )
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .add(entry)
+        .addOnSuccessListener { documentReference ->
+            Log.d("Firestore", "Entrada de senha salva com ID: ${documentReference.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao salvar entrada de senha: ${e.message}")
+        }
+}
+
+fun searchDocumentByTitle(uid: String, categoryName: String, title: String, action: (DocumentSnapshot) -> Unit) {
+    val db = Firebase.firestore
+
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .whereEqualTo("title", title)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            if (querySnapshot.isEmpty) {
+                Log.w("Firestore", "Nenhuma senha encontrada com título: $title")
+                return@addOnSuccessListener
+            }
+
+            for (document in querySnapshot.documents) {
+                action(document)
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Erro ao buscar senha: ${e.message}")
+        }
+}
+
+
+fun updatePasswordByTitle(uid: String, categoryName: String, title: String, fieldToUpdate: String, newValue: Any) {
+    searchDocumentByTitle(uid, categoryName, title) { document ->
+        val valueToUpdate = if (fieldToUpdate == "password" && newValue is String) {
+            hashPassword(newValue)
+        } else {
+            newValue
+        }
+
+        document.reference
+            .update(fieldToUpdate, valueToUpdate)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Campo '$fieldToUpdate' atualizado com sucesso!")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao atualizar campo: ${e.message}")
+            }
+    }
+}
+
+fun deletePasswordByTitle(uid: String, categoryName: String, title: String) {
+    searchDocumentByTitle(uid, categoryName, title) { document ->
+        document.reference
+            .delete()
+            .addOnSuccessListener {
+                Log.d("Firestore", "Senha '$title' excluída com sucesso!")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao excluir senha: ${e.message}")
+            }
+    }
+}
+
 
 class MainActivity : ComponentActivity() {
-    private lateinit var auth: FirebaseAuth
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        FirebaseApp.initializeApp(this)
-        auth = Firebase.auth
-
-        // Verifica se o usuário está logado
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            // Usuário não está logado, redireciona para SignInActivity
-            startActivity(Intent(this, SignInActivity::class.java))
-            finish()
-            return
-        }
-        enableEdgeToEdge()
         setContent {
             Pi3_time1Theme {
-                    Greeting(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .wrapContentSize(Alignment.Center),
-                        activity = this@MainActivity
-                    )
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    PasswordManagerScreenPreview()
                 }
             }
         }
     }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PasswordManagerScreen() {
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+
+
+    val samplePasswords = List(5) { index ->
+        PasswordEntry(
+            title = "Serviço ${index + 1}",
+            username = "usuario$index@exemplo.com",
+            password = "senhaSegura$index",
+            description = "bla bla bla bla"
+        )
+    }
+
+    val filteredPasswords = samplePasswords.filter {
+        it.title.contains(searchQuery.text, ignoreCase = true) ||
+                it.username?.contains(searchQuery.text, ignoreCase = true) == true
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text(
+                    text = "Menu",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+                Divider()
+                NavigationDrawerItem(
+                    label = { Text("Minhas Senhas") },
+                    selected = false,
+                    onClick = { /* ação futura */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                NavigationDrawerItem(
+                    label = { Text("Configurações") },
+                    selected = false,
+                    onClick = { /* ação futura */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                NavigationDrawerItem(
+                    label = { Text("Sair") },
+                    selected = false,
+                    onClick = { /* ação futura */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Pesquisar") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            scope.launch { drawerState.open() }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu"
+                            )
+                        }
+                    }
+                )
+            }
+        ) { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                items(filteredPasswords) { password ->
+                    PasswordCard(password)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PasswordCard(password: PasswordEntry) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = password.title,
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Usuário: ${password.username}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Senha: ******", // Mascarado por padrão
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Descrição: ${password.description}", // Mascarado por padrão
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    Pi3_time1Theme {
-        Greeting(modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center),
-            activity = MainActivity())
-    }
-}
-@Composable
-fun Greeting(modifier: Modifier = Modifier, activity: MainActivity?) {
-    var userData by remember { mutableStateOf<UserData?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        val userId = Firebase.auth.currentUser?.uid
-        if (userId != null) {
-            val db = Firebase.firestore
-            db.collection("Users")
-                .document(userId)
-                .get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        userData = UserData(
-                            name = document.getString("name") ?: "Desconhecido",
-                            email = document.getString("email") ?: "N/A",
-                        )
-                    } else {
-                        errorMessage = "Dados do usuário não encontrados."
-                    }
-                }
-                .addOnFailureListener { e ->
-                    errorMessage = "Erro ao buscar dados: ${e.message}"
-                }
-        } else {
-            errorMessage = "Usuário não está logado."
-        }
-    }
-
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (userData != null) {
-            Text(
-                text = "Bem-vindo, ${userData!!.name}!",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            Text(
-                text = "Email: ${userData!!.email}",
-                fontSize = 16.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Button(
-                onClick = {
-                    Firebase.auth.signOut()
-                    activity?.startActivity(Intent(activity, WelcomeActivity::class.java))
-                    activity?.finish()
-                }
-            ) {
-                Text(text = "Sair")
-            }
-        } else if (errorMessage != null) {
-            Text(
-                text = errorMessage!!,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-        } else {
-            Text(
-                text = "Carregando dados...",
-                fontSize = 16.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    }
+fun PasswordManagerScreenPreview() {
+    PasswordManagerScreen()
 }
