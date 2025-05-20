@@ -44,7 +44,6 @@ class WelcomeActivity : ComponentActivity() {
         if (currentUser != null) {
             // Usuário está logado, redirecionar para MainActivity
             startActivity(Intent(this, MainActivity::class.java))
-            finish() // Finalizar WelcomeActivity para não voltar para ela
             return
         }
         enableEdgeToEdge()
