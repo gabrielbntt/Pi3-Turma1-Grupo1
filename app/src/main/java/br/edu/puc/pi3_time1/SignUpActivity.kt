@@ -38,9 +38,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
-import java.security.MessageDigest
-import java.security.SecureRandom
-import java.util.Base64
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -170,9 +167,9 @@ fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
                     )
                 }
             },
-            isError = confirmpassword.isNotEmpty() && confirmpassword !=password && !isPasswordValid,
+            isError = confirmpassword.isNotEmpty() && confirmpassword != password && !isPasswordValid,
             supportingText = {
-                if (confirmpassword.isNotEmpty() && !isPasswordValid) {
+                if (confirmpassword.isNotEmpty() && confirmpassword != password) {
                     Text("As senhas não são iguais")
                 }
             }
@@ -188,7 +185,7 @@ fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
                         email = email,
                         password = password,
                         name = name,
-                        imei = imei!!, // imei já foi validado em isFormValid
+                        imei = imei!!,
                         onSuccess = {
                             message = "Conta criada! Verifique seu email."
                             name = ""
@@ -224,16 +221,20 @@ fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
 }
 
 fun getImei(context: Context): String {
-    // Retorna o ANDROID_ID como identificador do dispositivo
     return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 }
 
-fun hashPassword(password: String): String {
-    val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-    val saltedPassword = password + Base64.getEncoder().encodeToString(salt)
-    val digest = MessageDigest.getInstance("SHA-256")
-    val hash = digest.digest(saltedPassword.toByteArray())
-    return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash)
+fun obfuscatePassword(password: String, salt: String): String {
+    val shift = salt.last().code % 26
+    return password.map { char ->
+        if (char.isLetter()) {
+            val base = if (char.isUpperCase()) 'A' else 'a'
+            val shifted = ((char.code - base.code + shift) % 26 + base.code).toChar()
+            shifted
+        } else {
+            char
+        }
+    }.joinToString("")
 }
 
 fun createNewAccount(
@@ -246,9 +247,9 @@ fun createNewAccount(
     onFailure: (Exception) -> Unit
 ) {
     val auth = Firebase.auth
-    val hashedPassword = hashPassword(password)
+    val obfuscatedPassword = obfuscatePassword(password, imei) // Substitui hashPassword
 
-    auth.createUserWithEmailAndPassword(email, password)
+    auth.createUserWithEmailAndPassword(email, password) // Usando a senha original no Firebase Auth
         .addOnCompleteListener(activity) { task ->
             if (task.isSuccessful) {
                 val user = auth.currentUser
@@ -266,7 +267,7 @@ fun createNewAccount(
                                             userId = userId,
                                             name = name,
                                             email = email,
-                                            hashedPassword = hashedPassword,
+                                            obfuscatedPassword = obfuscatedPassword, // Usa a senha ofuscada
                                             imei = imei,
                                             onSuccess = onSuccess,
                                             onFailure = onFailure
@@ -292,7 +293,7 @@ fun saveAccountToFirebase(
     userId: String,
     name: String,
     email: String,
-    hashedPassword: String,
+    obfuscatedPassword: String,
     imei: String,
     onSuccess: () -> Unit,
     onFailure: (Exception) -> Unit
@@ -302,7 +303,7 @@ fun saveAccountToFirebase(
         "name" to name,
         "email" to email,
         "uid" to userId,
-        "password" to hashedPassword,
+        "password" to obfuscatedPassword, // Usa a senha ofuscada
         "imei" to imei
     )
 
