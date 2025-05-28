@@ -48,7 +48,7 @@ fun Pi3_time1Theme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography,
         content = content
     )
 }

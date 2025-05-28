@@ -63,7 +63,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
     implementation(libs.firebase.analytics)
 
-    //Firestore
+    // Firestore
     implementation("com.google.firebase:firebase-firestore-ktx:25.1.3")
     implementation(libs.firebase.auth)
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
@@ -71,4 +71,7 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.3.0")
     implementation("androidx.camera:camera-lifecycle:1.3.0")
     implementation("androidx.camera:camera-view:1.3.0")
+
+    // Google Fonts
+    implementation(libs.ui.text.google.fonts)
 }

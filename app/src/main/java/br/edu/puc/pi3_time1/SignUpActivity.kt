@@ -5,13 +5,19 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,8 +48,19 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import br.edu.puc.pi3_time1.ui.theme.InterFontFamily
 
 class SignUpActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
@@ -58,9 +75,238 @@ class SignUpActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .wrapContentSize(Alignment.Center),
-                    activity = this@SignUpActivity
+                    activity = this@SignUpActivity,
+                    onNavigateToSignIn = {
+                        startActivity(Intent(this@SignUpActivity, SignInActivity::class.java))
+                    }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun SignUp(modifier: Modifier = Modifier,
+           activity: SignUpActivity,
+           onNavigateToSignIn: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmpassword by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var imei by remember { mutableStateOf<String?>(null) }
+    var showErrors by remember { mutableStateOf(false) }
+
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
+    val context = LocalContext.current
+
+    // Obter o identificador do dispositivo quando o Composable é inicializado
+    LaunchedEffect(key1 = true) {
+        imei = getImei(context)
+        if (imei != null) {
+            Log.d("SignUpActivity", "Identificador obtido com sucesso! imei: $imei")
+        } else {
+            Log.w("SignUpActivity", "Falha ao obter identificador.")
+        }
+    }
+
+    val isNameValid = name.isNotBlank()
+    val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isPasswordValid = password.isNotBlank() && password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@\$!%*?&^#()\\[\\]{}<>.,;:_+=|~`\\-]).{8,}\$"))
+    val isConfirmPassValid = confirmpassword.isNotBlank() && confirmpassword == password
+    val isFormValid = isNameValid && isEmailValid && isPasswordValid && isConfirmPassValid && imei != null
+
+
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "Seja bem-vindo\nao SuperID",
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 34.sp,
+            lineHeight = 34.sp,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(60.dp))
+
+        OutlinedTextField(
+            modifier = Modifier.width(258.dp),
+            value = name,
+            onValueChange = { name = it },
+            label = { Text(text = "Nome") },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DarkBlue,
+                unfocusedBorderColor = DarkBlue,
+                errorBorderColor = Color.Red, // cor da borda em erro
+                errorLabelColor = Color.Red
+            ),
+            singleLine = true,
+            supportingText = {
+                if (showErrors && name.isBlank()) {
+                    Text(
+                        text = "Preencha este campo.",
+                        color = Color.Red
+                    )
+                }
+            }
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.width(258.dp),
+            value = email,
+            onValueChange = { email = it },
+            label = { Text(text = "Email") },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DarkBlue,
+                unfocusedBorderColor = DarkBlue,
+                errorBorderColor = Color.Red, // cor da borda em erro
+                errorLabelColor = Color.Red
+            ),
+            singleLine = true,
+            supportingText = {
+                if (showErrors && email.isBlank()) {
+                    Text(
+                        text = "Preencha este campo.",
+                        color = Color.Red
+                    )
+                } else if (showErrors && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    Text(
+                        text = "Email inválido.",
+                        color = Color.Red
+                    )
+                }
+            }
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.width(258.dp),
+            value = password,
+            onValueChange = { password = it },
+            label = { Text(text = "Senha") },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DarkBlue,
+                unfocusedBorderColor = DarkBlue,
+                errorBorderColor = Color.Red, // cor da borda em erro
+                errorLabelColor = Color.Red
+            ),
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha",
+                        tint = DarkBlue
+                    )
+                }
+            },
+            singleLine = true,
+            supportingText = {
+                if (showErrors && password.isBlank()) {
+                    Text(
+                        text = "Preencha este campo.",
+                        color = Color.Red
+                    )
+                } else if (showErrors && password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@\$!%*?&^#()\\[\\]{}<>.,;:_+=|~`\\-]).{8,}\$"))) {
+                    Text(
+                        text = "A senha deve conter ao menos 8 caracteres.\nA senha deve ter uma letra maiúscula e uma minúscula.\nA senha deve ter um número.\nA senha deve ter um caractere especial.",
+                        color = Color.Red
+                    )
+                }
+            }
+        )
+
+        Text(text = "Sua senha deve conter:\n" + "• Ao menos 8 caracteres\n" + "• Uma letra maiúscula e uma minúscula\n" + "• Um número\n" + "• Um caractere especial (ex: !@#\$%)",
+            fontSize = 12.sp,
+            textAlign = TextAlign.Left,
+            color = Gray)
+
+        OutlinedTextField(
+            modifier = Modifier.width(258.dp),
+            value = confirmpassword,
+            onValueChange = { confirmpassword = it },
+            label = { Text(text = "Confirmar Senha") },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DarkBlue,
+                unfocusedBorderColor = DarkBlue,
+                errorBorderColor = Color.Red, // cor da borda em erro
+                errorLabelColor = Color.Red
+            ),
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha",
+                        tint = DarkBlue
+                    )
+                }
+            },
+            singleLine = true,
+            supportingText = {
+                if (showErrors && confirmpassword.isBlank()) {
+                    Text(
+                        text = "Preencha este campo.",
+                        color = Color.Red
+                    )
+                } else if (showErrors && confirmpassword == password) {
+                    Text(
+                        text = "As senhas não coincidem",
+                        color = Color.Red
+                    )
+                }
+            }
+        )
+        Text(text = "Li e concordo com os termos de uso", fontSize = 14.sp)
+        Spacer(modifier = Modifier.height(60.dp))
+        Button(
+            modifier = Modifier
+                .width(258.dp)
+                .height(55.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DarkBlue,
+                contentColor = White
+            ),
+            onClick = {
+                showErrors = true // Ativa a exibição dos erros
+
+                if (isFormValid) {
+                    createNewAccount(
+                        activity = activity,
+                        email = email,
+                        password = password,
+                        name = name,
+                        imei = imei!!, // imei já foi validado em isFormValid
+                        onSuccess = {
+                            message = "Conta criada! Verifique seu email."
+                            name = ""
+                            email = ""
+                            password = ""
+                            Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_SHORT).show()
+                            activity.startActivity(Intent(activity, MainActivity::class.java))
+                        },
+                        onFailure = { e ->
+                            message = "Erro ao criar conta: ${e.message}"
+                            Log.e("SignUpActivity", "Erro ao criar conta", e)
+                        }
+                    )
+                }
+            }
+        ) {
+            Text(text = "Cadastrar", fontWeight = FontWeight.ExtraBold)
+        }
+        TextButton(onClick = onNavigateToSignIn) {
+            Text(text = "Já tenho uma conta", fontWeight = FontWeight.ExtraBold, color = DarkBlue, style = TextStyle(textDecoration = TextDecoration.Underline))
         }
     }
 }
@@ -73,153 +319,9 @@ fun SignUpPreview() {
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
-            activity = SignUpActivity()
+            activity = SignUpActivity(),
+            onNavigateToSignIn = { }
         )
-    }
-}
-
-@Composable
-fun SignUp(modifier: Modifier = Modifier, activity: SignUpActivity) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmpassword by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
-    var imei by remember { mutableStateOf<String?>(null) }
-
-    val context = LocalContext.current
-
-    // Obter o identificador do dispositivo quando o Composable é inicializado
-    LaunchedEffect(key1 = true) {
-        imei = getImei(context)
-        if (imei != null) {
-            Log.d("SignUpActivity", "Identificador obtido com sucesso: $imei")
-        } else {
-            Log.w("SignUpActivity", "Falha ao obter identificador")
-        }
-    }
-
-    val isNameValid = name.isNotEmpty()
-    val isEmailValid = email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    val isPasswordValid = password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,}$"))
-    val isFormValid = isNameValid && isEmailValid && isPasswordValid && imei != null
-
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = "SignUp",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
-        )
-        OutlinedTextField(
-            modifier = Modifier.padding(10.dp),
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Nome") },
-            isError = name.isNotEmpty() && !isNameValid,
-            supportingText = {
-                if (name.isNotEmpty() && !isNameValid) {
-                    Text("O nome não pode estar vazio")
-                }
-            }
-        )
-        OutlinedTextField(
-            modifier = Modifier.padding(10.dp),
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            isError = email.isNotEmpty() && !isEmailValid,
-            supportingText = {
-                if (email.isNotEmpty() && !isEmailValid) {
-                    Text("Email inválido")
-                }
-            }
-        )
-        OutlinedTextField(
-            modifier = Modifier.padding(10.dp),
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Senha") },
-            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(
-                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha"
-                    )
-                }
-            },
-            isError = password.isNotEmpty() && !isPasswordValid,
-            supportingText = {
-                if (password.isNotEmpty() && !isPasswordValid) {
-                    Text("A senha deve ter no mínimo uma minúscula, uma maiúscula e um número")
-                }
-            }
-        )
-        OutlinedTextField(
-            modifier = Modifier.padding(10.dp),
-            value = confirmpassword,
-            onValueChange = { confirmpassword = it },
-            label = { Text("Confirmar Senha") },
-            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(
-                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha"
-                    )
-                }
-            },
-            isError = confirmpassword.isNotEmpty() && confirmpassword !=password && !isPasswordValid,
-            supportingText = {
-                if (confirmpassword.isNotEmpty() && !isPasswordValid) {
-                    Text("As senhas não são iguais")
-                }
-            }
-        )
-
-        Button(
-            onClick = {
-                if (!isFormValid) {
-                    message = "Corrija os erros nos campos ou aguarde a obtenção do identificador."
-                } else {
-                    createNewAccount(
-                        activity = activity,
-                        email = email,
-                        password = password,
-                        name = name,
-                        imei = imei!!, // imei já foi validado em isFormValid
-                        onSuccess = {
-                            message = "Conta criada! Verifique seu email."
-                            name = ""
-                            email = ""
-                            password = ""
-                            activity.startActivity(Intent(activity, MainActivity::class.java))
-                        },
-                        onFailure = { e ->
-                            message = "Erro ao criar conta: ${e.message}"
-                            Log.e("SignUpActivity", "Erro ao criar conta", e)
-                        }
-                    )
-                }
-            }
-        ) {
-            Text(text = "Criar Minha Conta")
-        }
-        Button(
-            onClick = {
-                activity.startActivity(Intent(activity, WelcomeActivity::class.java))
-            }
-        ) {
-            Text("Voltar ao menu")
-        }
-        if (message.isNotEmpty()) {
-            Text(
-                text = message,
-                modifier = Modifier.padding(top = 16.dp),
-                fontSize = 14.sp
-            )
-        }
     }
 }
 
