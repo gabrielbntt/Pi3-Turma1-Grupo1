@@ -313,9 +313,7 @@ fun saveAccountToFirebase(
         .addOnSuccessListener {
             Log.d("SignUpActivity", "Dados salvos no Firestore com sucesso")
             onSuccess()
-            createCategory(userId, "SitesWeb")
-            createCategory(userId, "Aplicativos")
-            createCategory(userId, "TecladosDeAcessoFísico")
+            createCategory(userId, listOf("SitesWeb", "Aplicativos", "TecladosDeAcessoFísico"))
         }
         .addOnFailureListener { e ->
             Log.e("SignUpActivity", "Erro ao salvar no Firestore", e)

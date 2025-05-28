@@ -26,8 +26,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class PasswordEntry(
     val username: String?,
@@ -40,19 +43,24 @@ data class Category(
     val services: List<PasswordEntry>
 )
 
-fun createCategory(uid: String, categoryName: String) {
+fun createCategory(uid: String, categories: List<String>) {
     val db = Firebase.firestore
     val vazio = hashMapOf("placeholder" to true)
 
-    db.collection("Collections")
-        .document(uid)
-        .collection(categoryName)
-        .add(vazio)
-        .addOnSuccessListener { documentReference ->
-            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
-        }
-        .addOnFailureListener { e ->
-            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+    // Cria as subcoleções (uma para cada categoria)
+    categories.forEach { categoryName ->
+        db.collection("Collections")
+            .document(uid)
+            .collection(categoryName)
+            .add(vazio)
+    }
+
+    // Atualiza o array categoriesList de uma vez só com todas as categorias
+    val docRef = db.collection("Collections").document(uid)
+    docRef.update("categoriesList", FieldValue.arrayUnion(*categories.toTypedArray()))
+        .addOnFailureListener {
+            // Se o documento não existir, cria com o array completo
+            docRef.set(mapOf("categoriesList" to categories), SetOptions.merge())
         }
 }
 
@@ -75,6 +83,30 @@ fun savePasswordEntry(uid: String, categoryName: String, username: String?, pass
         .addOnFailureListener { e ->
             Log.e("Firestore", "Erro ao salvar entrada de senha: ${e.message}")
         }
+}
+
+suspend fun fetchCategories(uid: String): List<String> {
+    val db = Firebase.firestore
+    val docRef = db.collection("Collections").document(uid)
+    val snapshot = docRef.get().await()
+    return snapshot.get("categoriesList") as? List<String> ?: emptyList()
+}
+
+suspend fun fetchPasswordsForCategory(uid: String, category: String): List<PasswordEntry> {
+    val db = Firebase.firestore
+    val passwordsSnapshot = db.collection("Collections")
+        .document(uid)
+        .collection(category)
+        .get()
+        .await()
+
+    return passwordsSnapshot.documents.map { doc ->
+        PasswordEntry(
+            username = doc.getString("username"),
+            password = doc.getString("password") ?: "",
+            description = doc.getString("description")
+        )
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -114,42 +146,18 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
     var showAddPasswordDialog by remember { mutableStateOf(false) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
 
-    // Lista estática de categorias (placeholders)
-    val sampleCategories = listOf(
-        Category(
-            name = "SitesWeb",
-            services = List(3) { index ->
-                PasswordEntry(
-                    username = "usuario$index@site.com",
-                    password = "senhaSegura$index",
-                    description = "Descrição do site $index"
-                )
-            }
-        ),
-        Category(
-            name = "Aplicativos",
-            services = List(2) { index ->
-                PasswordEntry(
-                    username = "usuario$index@app.com",
-                    password = "senhaApp$index",
-                    description = "Descrição do app $index"
-                )
-            }
-        ),
-        Category(
-            name = "TecladosDeAcessoFisico",
-            services = List(1) { index ->
-                PasswordEntry(
-                    username = null,
-                    password = "senhaTeclado$index",
-                    description = "Descrição do teclado $index"
-                )
-            }
-        )
-    )
+    LaunchedEffect(uid) {
+        val categoryNames = fetchCategories(uid)
+        val loadedCategories = categoryNames.map { categoryName ->
+            val passwords = fetchPasswordsForCategory(uid, categoryName)
+            Category(name = categoryName, services = passwords)
+        }
+        categories = loadedCategories
+    }
 
-    val filteredCategories = sampleCategories.filter { category ->
+    val filteredCategories = categories.filter { category ->
         category.name.contains(searchQuery.text, ignoreCase = true) ||
                 category.services.any {
                     it.username?.contains(searchQuery.text, ignoreCase = true) == true
@@ -272,7 +280,7 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
                 showAddPasswordDialog = false
             },
             uid = uid,
-            categories = sampleCategories.map { it.name }
+            categories = categories.map { it.name }
         )
     }
 
@@ -280,7 +288,7 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
         AddCategoryDialog(
             onDismiss = { showAddCategoryDialog = false },
             onSave = { categoryName ->
-                createCategory(uid, categoryName)
+                createCategory(uid, listOf(categoryName))
                 showAddCategoryDialog = false
             }
         )
