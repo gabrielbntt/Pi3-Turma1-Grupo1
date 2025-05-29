@@ -9,9 +9,14 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,6 +62,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -78,6 +84,9 @@ class SignUpActivity : ComponentActivity() {
                     activity = this@SignUpActivity,
                     onNavigateToSignIn = {
                         startActivity(Intent(this@SignUpActivity, SignInActivity::class.java))
+                    },
+                    onNavigateWelcome = {
+                        startActivity(Intent(this@SignUpActivity, WelcomeActivity::class.java))
                     }
                 )
             }
@@ -88,7 +97,8 @@ class SignUpActivity : ComponentActivity() {
 @Composable
 fun SignUp(modifier: Modifier = Modifier,
            activity: SignUpActivity,
-           onNavigateToSignIn: () -> Unit) {
+           onNavigateToSignIn: () -> Unit,
+           onNavigateWelcome: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -126,6 +136,20 @@ fun SignUp(modifier: Modifier = Modifier,
 
 
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp),
+            horizontalArrangement = Arrangement.Start // Alinha à esquerda
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.bot_o_voltar),
+                contentDescription = "Botão Voltar",
+                modifier = Modifier
+                    .clickable{ onNavigateWelcome() }
+            )
+        }
+
         Text(
             text = "Seja bem-vindo\nao SuperID",
             fontFamily = InterFontFamily,
@@ -216,7 +240,7 @@ fun SignUp(modifier: Modifier = Modifier,
                         text = "Preencha este campo.",
                         color = Color.Red
                     )
-                } else if (showErrors && password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@\$!%*?&^#()\\[\\]{}<>.,;:_+=|~`\\-]).{8,}\$"))) {
+                } else if (showErrors && !(password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@\$!%*?&^#()\\[\\]{}<>.,;:_+=|~`\\-]).{8,}\$")))) {
                     Text(
                         text = "A senha deve conter ao menos 8 caracteres.\nA senha deve ter uma letra maiúscula e uma minúscula.\nA senha deve ter um número.\nA senha deve ter um caractere especial.",
                         color = Color.Red
@@ -258,7 +282,7 @@ fun SignUp(modifier: Modifier = Modifier,
                         text = "Preencha este campo.",
                         color = Color.Red
                     )
-                } else if (showErrors && confirmpassword == password) {
+                } else if (showErrors && confirmpassword != password) {
                     Text(
                         text = "As senhas não coincidem",
                         color = Color.Red
@@ -320,7 +344,8 @@ fun SignUpPreview() {
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
             activity = SignUpActivity(),
-            onNavigateToSignIn = { }
+            onNavigateToSignIn = { },
+            onNavigateWelcome = { }
         )
     }
 }
