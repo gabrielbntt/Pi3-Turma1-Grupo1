@@ -278,6 +278,15 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
                 val obfuscatedPassword = obfuscatePassword(password, uid)
                 savePasswordEntry(uid, categoryName, username, obfuscatedPassword, description)
                 showAddPasswordDialog = false
+
+                scope.launch {
+                    val categoryNames = fetchCategories(uid)
+                    val loadedCategories = categoryNames.map { categoryName ->
+                        val passwords = fetchPasswordsForCategory(uid, categoryName)
+                        Category(name = categoryName, services = passwords)
+                    }
+                    categories = loadedCategories
+                }
             },
             uid = uid,
             categories = categories.map { it.name }
