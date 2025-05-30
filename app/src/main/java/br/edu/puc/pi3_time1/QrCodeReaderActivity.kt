@@ -1,6 +1,7 @@
 package br.edu.puc.pi3_time1
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -48,16 +49,25 @@ class QrCodeReaderActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Pi3_time1Theme {
-                QrCodeScannerScreen {  }
+                QrCodeScannerScreen(
+                    onQrCodeDetected = { scannedQrCode ->
+                        Log.d("QRCode", "QR Code detectado: $scannedQrCode")
+                    },
+                    onNavigateBack = {
+                        startActivity(Intent(this@QrCodeReaderActivity, MainActivity::class.java))
+
+                    }
+                )
             }
         }
     }
 }
 
-
 @Composable
 fun QrCodeScannerScreen(
-    onQrCodeDetected: (String) -> Unit
+    onQrCodeDetected: (String) -> Unit,
+    onNavigateBack:() -> Unit
+
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -106,7 +116,9 @@ fun QrCodeScannerScreen(
                     Text("QR Code Detectado:")
                     Text(detectedQrCode.orEmpty()) // Exibe o QR Code detectado
                 } else {
-                    Text("Aguardando leitura do QR Code...")
+                    Button(onClick = {onNavigateBack()}) {
+                        Text(text = "Retornar")
+                    }
                 }
             }
 
