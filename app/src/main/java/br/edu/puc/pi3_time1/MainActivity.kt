@@ -25,8 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
@@ -43,11 +45,48 @@ data class Category(
     val services: List<PasswordEntry>
 )
 
+fun checkEmailVerification(onResult: (Boolean) -> Unit) {
+    val auth = FirebaseAuth.getInstance()
+    val user = auth.currentUser
+
+    if (user == null) {
+        Log.w("CheckEmail", "Usuário não logado")
+        onResult(false)
+        return
+    }
+
+    user.reload()
+        .addOnSuccessListener {
+            val isVerified = user.isEmailVerified
+            if (isVerified) {
+                updateEmailVerificationStatus(user.uid)
+            }
+            onResult(isVerified) // Passa o resultado para o callback
+        }
+        .addOnFailureListener { e ->
+            Log.e("CheckEmail", "Erro ao verificar email", e)
+            onResult(false) // Define como false em caso de falha
+        }
+}
+
+private fun updateEmailVerificationStatus(uid: String) {
+    val db = FirebaseFirestore.getInstance()
+    val userDocRef = db.collection("Users").document(uid)
+    val data = mapOf("hasEmailVerified" to true)
+    userDocRef
+        .set(data)
+        .addOnSuccessListener {
+            Log.d("UpdateStatus", "Documento criado e verificação de email definida para o usuário $uid")
+        }
+        .addOnFailureListener { e ->
+            Log.e("UpdateStatus", "Erro ao criar documento para o usuário $uid", e)
+        }
+}
+
 fun createCategory(uid: String, categories: List<String>) {
     val db = Firebase.firestore
     val vazio = hashMapOf("placeholder" to true)
 
-    // Cria as subcoleções (uma para cada categoria)
     categories.forEach { categoryName ->
         db.collection("Collections")
             .document(uid)
@@ -55,11 +94,9 @@ fun createCategory(uid: String, categories: List<String>) {
             .add(vazio)
     }
 
-    // Atualiza o array categoriesList de uma vez só com todas as categorias
     val docRef = db.collection("Collections").document(uid)
     docRef.update("categoriesList", FieldValue.arrayUnion(*categories.toTypedArray()))
         .addOnFailureListener {
-            // Se o documento não existir, cria com o array completo
             docRef.set(mapOf("categoriesList" to categories), SetOptions.merge())
         }
 }
@@ -109,6 +146,7 @@ suspend fun fetchPasswordsForCategory(uid: String, category: String): List<Passw
     }
 }
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,6 +157,12 @@ class MainActivity : ComponentActivity() {
                         onNavigateToCategories = {
                             startActivity(Intent(this@MainActivity, CategoriesActivity::class.java))
                         },
+                        onNavigateToAccount ={
+                            startActivity(Intent(this@MainActivity, AccountActivity::class.java))
+                        },
+                        onNavigateToQrCode = {
+                            startActivity(Intent(this@MainActivity, QrCodeReaderActivity::class.java))
+                        },
                         onLogout = {
                             Firebase.auth.signOut()
                             startActivity(
@@ -128,7 +172,8 @@ class MainActivity : ComponentActivity() {
                                     }
                             )
                             finish()
-                        }
+                        },
+                        snackbarMessage = intent.getStringExtra("SNACKBAR_MESSAGE")
                     )
                 }
             }
@@ -138,7 +183,13 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Unit) {
+fun PasswordManagerScreen(
+    onLogout: () -> Unit,
+    onNavigateToCategories: () -> Unit,
+    onNavigateToAccount: () -> Unit,
+    onNavigateToQrCode: () -> Unit,
+    snackbarMessage: String? = null
+) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -147,6 +198,20 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show Snackbar if a message is provided
+    LaunchedEffect(snackbarMessage) {
+        if (!snackbarMessage.isNullOrEmpty()) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = snackbarMessage,
+                    actionLabel = "Entendido",
+                    duration = SnackbarDuration.Long
+                )
+            }
+        }
+    }
 
     LaunchedEffect(uid) {
         val categoryNames = fetchCategories(uid)
@@ -181,9 +246,9 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
-                    label = { Text("Configurações") },
+                    label = { Text("Conta") },
                     selected = false,
-                    onClick = { /* ação futura */ },
+                    onClick = { onNavigateToAccount()},
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
@@ -230,7 +295,8 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
                         contentDescription = "Adicionar"
                     )
                 }
-            }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
@@ -275,18 +341,8 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
         AddPasswordDialog(
             onDismiss = { showAddPasswordDialog = false },
             onSave = { username, password, description, categoryName ->
-                val obfuscatedPassword = obfuscatePassword(password, uid)
-                savePasswordEntry(uid, categoryName, username, obfuscatedPassword, description)
+                savePasswordEntry(uid, categoryName, username, password, description)
                 showAddPasswordDialog = false
-
-                scope.launch {
-                    val categoryNames = fetchCategories(uid)
-                    val loadedCategories = categoryNames.map { categoryName ->
-                        val passwords = fetchPasswordsForCategory(uid, categoryName)
-                        Category(name = categoryName, services = passwords)
-                    }
-                    categories = loadedCategories
-                }
             },
             uid = uid,
             categories = categories.map { it.name }
@@ -302,6 +358,7 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
             }
         )
     }
+
 }
 
 @Composable
@@ -576,9 +633,11 @@ fun PasswordManagerScreenPreview() {
         Surface(modifier = Modifier.fillMaxSize()) {
             PasswordManagerScreen(
                 onLogout = {},
-                onNavigateToCategories = {}
+                onNavigateToCategories = {},
+                onNavigateToAccount = {},
+                onNavigateToQrCode = {},
+                snackbarMessage = null
             )
         }
     }
 }
-
