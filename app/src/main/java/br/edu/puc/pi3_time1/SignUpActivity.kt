@@ -10,11 +10,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,9 +61,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -68,6 +74,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import br.edu.puc.pi3_time1.ui.theme.InterFontFamily
@@ -150,7 +157,7 @@ fun SignUp(modifier: Modifier = Modifier,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 24.dp),
-            horizontalArrangement = Arrangement.Start // Alinha à esquerda
+            horizontalArrangement = Arrangement.Start
         ) {
             Image(
                 painter = painterResource(id = R.drawable.bot_o_voltar),
@@ -175,9 +182,12 @@ fun SignUp(modifier: Modifier = Modifier,
             modifier = Modifier.width(258.dp),
             value = name,
             onValueChange = { name = it },
-            label = { Text(text = "Nome") },
+            label = { Text(text = "Nome", color = Gray) },
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                cursorColor = Black,
                 focusedBorderColor = DarkBlue,
                 unfocusedBorderColor = DarkBlue,
                 errorBorderColor = ErrorRed,
@@ -198,14 +208,18 @@ fun SignUp(modifier: Modifier = Modifier,
             modifier = Modifier.width(258.dp),
             value = email,
             onValueChange = { email = it },
-            label = { Text(text = "Email") },
+            label = { Text(text = "Email", color = Gray) },
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                cursorColor = Black,
                 focusedBorderColor = DarkBlue,
                 unfocusedBorderColor = DarkBlue,
                 errorBorderColor = ErrorRed,
                 errorLabelColor = ErrorRed
             ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
             supportingText = {
                 if (showErrors && email.isBlank()) {
@@ -226,9 +240,12 @@ fun SignUp(modifier: Modifier = Modifier,
             modifier = Modifier.width(258.dp),
             value = password,
             onValueChange = { password = it },
-            label = { Text(text = "Senha") },
+            label = { Text(text = "Senha", color = Gray) },
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                cursorColor = Black,
                 focusedBorderColor = DarkBlue,
                 unfocusedBorderColor = DarkBlue,
                 errorBorderColor = ErrorRed,
@@ -244,6 +261,7 @@ fun SignUp(modifier: Modifier = Modifier,
                 }
             },
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
             supportingText = {
                 if (showErrors && password.isBlank()) {
@@ -270,9 +288,12 @@ fun SignUp(modifier: Modifier = Modifier,
             modifier = Modifier.width(258.dp),
             value = confirmpassword,
             onValueChange = { confirmpassword = it },
-            label = { Text(text = "Confirmar Senha") },
+            label = { Text(text = "Confirmar Senha", color = Gray) },
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                cursorColor = Black,
                 focusedBorderColor = DarkBlue,
                 unfocusedBorderColor = DarkBlue,
                 errorBorderColor = ErrorRed,
@@ -288,6 +309,7 @@ fun SignUp(modifier: Modifier = Modifier,
                 }
             },
             visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
             supportingText = {
                 if (showErrors && confirmpassword.isBlank()) {
@@ -311,6 +333,11 @@ fun SignUp(modifier: Modifier = Modifier,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
+                colors = CheckboxDefaults.colors(
+                    checkedColor = DarkBlue,
+                    uncheckedColor = DarkBlue,
+                    checkmarkColor = White,
+                ),
                 checked = termsAccepted,
                 onCheckedChange = { termsAccepted = it }
             )
@@ -320,6 +347,7 @@ fun SignUp(modifier: Modifier = Modifier,
             )
             Text(
                 text = "termos de uso",
+                fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = DarkBlue,
                 textDecoration = TextDecoration.Underline,
@@ -370,7 +398,7 @@ fun SignUp(modifier: Modifier = Modifier,
                 showErrors = true // Ativa a exibição dos erros
 
                 if (isFormValid) {
-                    isLoading = true
+                    isLoading = true // ativa a barra de loading do cadastro
                     createNewAccount(
                         activity = activity,
                         email = email,
@@ -383,7 +411,7 @@ fun SignUp(modifier: Modifier = Modifier,
                             name = ""
                             email = ""
                             password = ""
-                            Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_LONG).show()
                             val intent = Intent(activity, MainActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             activity.startActivity(intent)
@@ -407,9 +435,18 @@ fun SignUp(modifier: Modifier = Modifier,
                 Text(text = "Cadastrar", fontWeight = FontWeight.ExtraBold)
             }
         }
-        TextButton(onClick = onNavigateToSignIn) {
-            Text(text = "Já tenho uma conta", fontWeight = FontWeight.ExtraBold, color = DarkBlue, style = TextStyle(textDecoration = TextDecoration.Underline))
-        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Já tenho uma conta",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = DarkBlue,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .clickable { onNavigateToSignIn() }
+        )
     }
 }
 
