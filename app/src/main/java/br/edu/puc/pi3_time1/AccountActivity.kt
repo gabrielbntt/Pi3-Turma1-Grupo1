@@ -28,11 +28,8 @@ class AccountActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         auth = Firebase.auth
-
-        // Verifica se o usuário está logado
         val currentUser = auth.currentUser
         if (currentUser == null) {
-            // Usuário não está logado, redireciona para SignInActivity
             startActivity(Intent(this, SignInActivity::class.java))
             finish()
             return
@@ -77,7 +74,7 @@ fun AccountHandler(modifier: Modifier = Modifier, onNavigateToChangePassword: ()
     var userData by remember { mutableStateOf<UserData?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var verifiedText by remember { mutableStateOf<String>("Verificando...") }
-    var isVerified by remember { mutableStateOf<Boolean?>(null) } // Estado local para o resultado
+    var isVerified by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {
         val userId = Firebase.auth.currentUser?.uid
         if (userId != null) {
