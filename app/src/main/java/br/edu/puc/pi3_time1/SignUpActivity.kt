@@ -470,13 +470,6 @@ fun getImei(context: Context): String {
     return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 }
 
-fun hashPassword(password: String): String {
-    val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-    val saltedPassword = password + Base64.getEncoder().encodeToString(salt)
-    val digest = MessageDigest.getInstance("SHA-256")
-    val hash = digest.digest(saltedPassword.toByteArray())
-    return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash)
-}
 
 fun createNewAccount(
     activity: SignUpActivity,
@@ -534,7 +527,7 @@ fun saveAccountToFirebase(
     userId: String,
     name: String,
     email: String,
-    hashedPassword: String,
+    obfuscatedPassword: String,
     imei: String,
     onSuccess: () -> Unit,
     onFailure: (Exception) -> Unit
@@ -544,9 +537,10 @@ fun saveAccountToFirebase(
         "name" to name,
         "email" to email,
         "uid" to userId,
-        "password" to hashedPassword,
+        "password" to obfuscatedPassword,
         "imei" to imei
     )
+
 
     db.collection("Users")
         .document(userId)
