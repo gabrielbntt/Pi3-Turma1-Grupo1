@@ -90,7 +90,7 @@ fun WelcomeScreen(
     ) {
         // Logo Super ID
         Image(
-            painter = painterResource(id = R.drawable.superid_icon),
+            painter = painterResource(id = R.drawable.icone_superid),
             contentDescription = "Logo do Super ID",
             modifier = Modifier
                 .padding(0.dp)
@@ -125,7 +125,7 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-            // Botão Cadastrar
+        // Botão Cadastrar
         Button(
             onClick = { onNavigateToSignUp() },
             modifier = Modifier
@@ -142,7 +142,7 @@ fun WelcomeScreen(
                 modifier = Modifier
                     .width(79.dp)
                     .height(19.dp)
-                )
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -163,7 +163,7 @@ fun WelcomeScreen(
                 modifier = Modifier
                     .width(45.dp)
                     .height(19.dp)
-                )
+            )
         }
     }
 }
