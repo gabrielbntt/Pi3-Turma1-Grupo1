@@ -25,21 +25,6 @@
             android:label="@string/title_activity_account"
             android:theme="@style/Theme.Pi3_time1" />
         <activity
-            android:name=".ResetPasswordActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="superid-23905.firebaseapp.com"
-                    android:pathPrefix="/__/auth/action"
-                    android:scheme="https" />
-            </intent-filter>
-        </activity>
-        <activity
             android:name=".ChangePasswordActivity"
             android:exported="false"
             android:label="@string/title_activity_change_password"
@@ -48,6 +33,11 @@
             android:name=".CategoriesActivity"
             android:exported="false"
             android:label="@string/title_activity_categories"
+            android:theme="@style/Theme.Pi3_time1" />
+        <activity
+            android:name=".QrCodeReaderActivity"
+            android:exported="false"
+            android:label="@string/title_activity_Qr_Code_Reader"
             android:theme="@style/Theme.Pi3_time1" />
         <activity
             android:name=".UserData"
