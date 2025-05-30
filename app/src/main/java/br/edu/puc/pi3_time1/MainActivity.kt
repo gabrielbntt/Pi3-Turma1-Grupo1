@@ -100,7 +100,18 @@ fun createCategory(uid: String, categories: List<String>) {
             docRef.set(mapOf("categoriesList" to categories), SetOptions.merge())
         }
 }
-
+fun obfuscatePassword(password: String, salt: String): String {
+    val shift = salt.last().code % 26
+    return password.map { char ->
+        if (char.isLetter()) {
+            val base = if (char.isUpperCase()) 'A' else 'a'
+            val shifted = ((char.code - base.code + shift) % 26 + base.code).toChar()
+            shifted
+        } else {
+            char
+        }
+    }.joinToString("")
+}
 fun savePasswordEntry(uid: String, categoryName: String, username: String?, password: String, description: String?) {
     val db = Firebase.firestore
     val obfuscatedPassword = obfuscatePassword(password, uid)
