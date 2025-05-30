@@ -72,9 +72,9 @@ class WelcomeActivity : ComponentActivity() {
                 )
             }
         }
+
     }
 }
-
 @Composable
 fun WelcomeScreen(
     modifier: Modifier = Modifier,

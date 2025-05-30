@@ -20,6 +20,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import androidx.compose.ui.text.TextStyle
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 class CategoriesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +50,7 @@ class CategoriesActivity : ComponentActivity() {
                         .width(412.dp)
                         .height(917.dp)
                         .background(color = Color(0xFFFFFFFF))
-                ,
+                    ,
                     onNavigateToMainActivity = {
                         startActivity(Intent(this@CategoriesActivity, MainActivity::class.java))
                     }
@@ -55,6 +62,22 @@ class CategoriesActivity : ComponentActivity() {
 
 @Composable
 fun Categories(modifier: Modifier = Modifier, onNavigateToMainActivity: () -> Unit) {
+    val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
+    var categories by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(uid) {
+        try {
+            isLoading = true
+            categories = fetchCategories(uid)
+            errorMessage = null
+        } catch (e: Exception) {
+            errorMessage = "Erro ao carregar categorias"
+        } finally {
+            isLoading = false
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -74,63 +97,32 @@ fun Categories(modifier: Modifier = Modifier, onNavigateToMainActivity: () -> Un
                 .height(36.dp)// Largura fixa para centralização visual
         )
 
-        // Campo Sites Web
-        TextField(
-            value = "Sites Web",
-            onValueChange = { /* Não editável */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-                .border(2.dp, Color(0xFF000000))
-                .background(Color((0xFFFFFFFF)))
-                .width(362.dp)
-                .height(59.dp),
-            enabled = false,
-            textStyle = TextStyle(
-                textAlign = TextAlign.Left,
-                fontSize = 20.sp,
-                color = Color.Black
-            )
-        )
-        Spacer(modifier = Modifier.height(51.dp))
-        // Campo Aplicativos
-        TextField(
-            value = "Aplicativos",
-            onValueChange = { /* Não editável */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-                .border(2.dp,Color(0xFF000000))
-                .background(Color((0xFFFFFFFF)))
-                .width(362.dp)
-                .height(59.dp),
-            enabled = false,
-            textStyle = TextStyle(
-                textAlign = TextAlign.Left,
-                fontSize = 20.sp,
-                color = Color.Black
-            )
-
-        )
-        Spacer(modifier = Modifier.height(44.dp))
-        // Campo Teclados de Acesso Físico
-        TextField(
-            value = "Teclados de Acesso Físico",
-            onValueChange = { /* Não editável */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-                .border(2.dp,Color(0xFF000000))
-                .background(Color((0xFFFFFFFF)))
-                .width(362.dp)
-                .height(59.dp),
-            enabled = false,
-            textStyle = TextStyle(
-                textAlign = TextAlign.Left,
-                fontSize = 20.sp,
-                color = Color.Black
-            )
-        )
+        if (isLoading) {
+            Text("Carregando categorias...", fontSize = 18.sp)
+        } else if (errorMessage != null) {
+            Text(errorMessage ?: "", color = Color.Red)
+        } else {
+            categories.forEach { category ->
+                TextField(
+                    value = category,
+                    onValueChange = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .border(2.dp, Color(0xFF000000))
+                        .background(Color.White)
+                        .width(362.dp)
+                        .height(59.dp),
+                    enabled = false,
+                    textStyle = TextStyle(
+                        textAlign = TextAlign.Left,
+                        fontSize = 20.sp,
+                        color = Color.Black
+                    )
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+        }
 
         // Botão Retornar
         Button(
@@ -148,7 +140,7 @@ fun Categories(modifier: Modifier = Modifier, onNavigateToMainActivity: () -> Un
                     .width(55.dp)
                     .height(20.dp)
 
-                )
+            )
         }
     }
 }

@@ -25,9 +25,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class PasswordEntry(
     val username: String?,
@@ -40,19 +45,59 @@ data class Category(
     val services: List<PasswordEntry>
 )
 
-fun createCategory(uid: String, categoryName: String) {
+fun checkEmailVerification(onResult: (Boolean) -> Unit) {
+    val auth = FirebaseAuth.getInstance()
+    val user = auth.currentUser
+
+    if (user == null) {
+        Log.w("CheckEmail", "Usuário não logado")
+        onResult(false)
+        return
+    }
+
+    user.reload()
+        .addOnSuccessListener {
+            val isVerified = user.isEmailVerified
+            if (isVerified) {
+                updateEmailVerificationStatus(user.uid)
+            }
+            onResult(isVerified) // Passa o resultado para o callback
+        }
+        .addOnFailureListener { e ->
+            Log.e("CheckEmail", "Erro ao verificar email", e)
+            onResult(false) // Define como false em caso de falha
+        }
+}
+
+private fun updateEmailVerificationStatus(uid: String) {
+    val db = FirebaseFirestore.getInstance()
+    val userDocRef = db.collection("Users").document(uid)
+    val data = mapOf("hasEmailVerified" to true)
+    userDocRef
+        .set(data)
+        .addOnSuccessListener {
+            Log.d("UpdateStatus", "Documento criado e verificação de email definida para o usuário $uid")
+        }
+        .addOnFailureListener { e ->
+            Log.e("UpdateStatus", "Erro ao criar documento para o usuário $uid", e)
+        }
+}
+
+fun createCategory(uid: String, categories: List<String>) {
     val db = Firebase.firestore
     val vazio = hashMapOf("placeholder" to true)
 
-    db.collection("Collections")
-        .document(uid)
-        .collection(categoryName)
-        .add(vazio)
-        .addOnSuccessListener { documentReference ->
-            Log.d("Firestore", "Documento criado com sucesso com ID: ${documentReference.id}")
-        }
-        .addOnFailureListener { e ->
-            Log.e("Firestore", "Erro ao criar documento: ${e.message}")
+    categories.forEach { categoryName ->
+        db.collection("Collections")
+            .document(uid)
+            .collection(categoryName)
+            .add(vazio)
+    }
+
+    val docRef = db.collection("Collections").document(uid)
+    docRef.update("categoriesList", FieldValue.arrayUnion(*categories.toTypedArray()))
+        .addOnFailureListener {
+            docRef.set(mapOf("categoriesList" to categories), SetOptions.merge())
         }
 }
 
@@ -77,6 +122,31 @@ fun savePasswordEntry(uid: String, categoryName: String, username: String?, pass
         }
 }
 
+suspend fun fetchCategories(uid: String): List<String> {
+    val db = Firebase.firestore
+    val docRef = db.collection("Collections").document(uid)
+    val snapshot = docRef.get().await()
+    return snapshot.get("categoriesList") as? List<String> ?: emptyList()
+}
+
+suspend fun fetchPasswordsForCategory(uid: String, category: String): List<PasswordEntry> {
+    val db = Firebase.firestore
+    val passwordsSnapshot = db.collection("Collections")
+        .document(uid)
+        .collection(category)
+        .get()
+        .await()
+
+    return passwordsSnapshot.documents.map { doc ->
+        PasswordEntry(
+            username = doc.getString("username"),
+            password = doc.getString("password") ?: "",
+            description = doc.getString("description")
+        )
+    }
+}
+
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +157,12 @@ class MainActivity : ComponentActivity() {
                         onNavigateToCategories = {
                             startActivity(Intent(this@MainActivity, CategoriesActivity::class.java))
                         },
+                        onNavigateToAccount ={
+                            startActivity(Intent(this@MainActivity, AccountActivity::class.java))
+                        },
+                        onNavigateToQrCode = {
+                            startActivity(Intent(this@MainActivity, QrCodeReaderActivity::class.java))
+                        },
                         onLogout = {
                             Firebase.auth.signOut()
                             startActivity(
@@ -96,7 +172,8 @@ class MainActivity : ComponentActivity() {
                                     }
                             )
                             finish()
-                        }
+                        },
+                        snackbarMessage = intent.getStringExtra("SNACKBAR_MESSAGE")
                     )
                 }
             }
@@ -106,7 +183,13 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Unit) {
+fun PasswordManagerScreen(
+    onLogout: () -> Unit,
+    onNavigateToCategories: () -> Unit,
+    onNavigateToAccount: () -> Unit,
+    onNavigateToQrCode: () -> Unit,
+    snackbarMessage: String? = null
+) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -114,42 +197,32 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
     var showAddPasswordDialog by remember { mutableStateOf(false) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Lista estática de categorias (placeholders)
-    val sampleCategories = listOf(
-        Category(
-            name = "SitesWeb",
-            services = List(3) { index ->
-                PasswordEntry(
-                    username = "usuario$index@site.com",
-                    password = "senhaSegura$index",
-                    description = "Descrição do site $index"
+    // Show Snackbar if a message is provided
+    LaunchedEffect(snackbarMessage) {
+        if (!snackbarMessage.isNullOrEmpty()) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = snackbarMessage,
+                    actionLabel = "Entendido",
+                    duration = SnackbarDuration.Long
                 )
             }
-        ),
-        Category(
-            name = "Aplicativos",
-            services = List(2) { index ->
-                PasswordEntry(
-                    username = "usuario$index@app.com",
-                    password = "senhaApp$index",
-                    description = "Descrição do app $index"
-                )
-            }
-        ),
-        Category(
-            name = "TecladosDeAcessoFisico",
-            services = List(1) { index ->
-                PasswordEntry(
-                    username = null,
-                    password = "senhaTeclado$index",
-                    description = "Descrição do teclado $index"
-                )
-            }
-        )
-    )
+        }
+    }
 
-    val filteredCategories = sampleCategories.filter { category ->
+    LaunchedEffect(uid) {
+        val categoryNames = fetchCategories(uid)
+        val loadedCategories = categoryNames.map { categoryName ->
+            val passwords = fetchPasswordsForCategory(uid, categoryName)
+            Category(name = categoryName, services = passwords)
+        }
+        categories = loadedCategories
+    }
+
+    val filteredCategories = categories.filter { category ->
         category.name.contains(searchQuery.text, ignoreCase = true) ||
                 category.services.any {
                     it.username?.contains(searchQuery.text, ignoreCase = true) == true
@@ -173,9 +246,9 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
-                    label = { Text("Configurações") },
+                    label = { Text("Conta") },
                     selected = false,
-                    onClick = { /* ação futura */ },
+                    onClick = { onNavigateToAccount()},
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
@@ -222,7 +295,8 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
                         contentDescription = "Adicionar"
                     )
                 }
-            }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { innerPadding ->
             LazyColumn(
                 contentPadding = innerPadding,
@@ -267,12 +341,11 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
         AddPasswordDialog(
             onDismiss = { showAddPasswordDialog = false },
             onSave = { username, password, description, categoryName ->
-                val obfuscatedPassword = obfuscatePassword(password, uid)
-                savePasswordEntry(uid, categoryName, username, obfuscatedPassword, description)
+                savePasswordEntry(uid, categoryName, username, password, description)
                 showAddPasswordDialog = false
             },
             uid = uid,
-            categories = sampleCategories.map { it.name }
+            categories = categories.map { it.name }
         )
     }
 
@@ -280,11 +353,12 @@ fun PasswordManagerScreen(onLogout: () -> Unit, onNavigateToCategories: () -> Un
         AddCategoryDialog(
             onDismiss = { showAddCategoryDialog = false },
             onSave = { categoryName ->
-                createCategory(uid, categoryName)
+                createCategory(uid, listOf(categoryName))
                 showAddCategoryDialog = false
             }
         )
     }
+
 }
 
 @Composable
@@ -559,9 +633,11 @@ fun PasswordManagerScreenPreview() {
         Surface(modifier = Modifier.fillMaxSize()) {
             PasswordManagerScreen(
                 onLogout = {},
-                onNavigateToCategories = {}
+                onNavigateToCategories = {},
+                onNavigateToAccount = {},
+                onNavigateToQrCode = {},
+                snackbarMessage = null
             )
         }
     }
 }
-
