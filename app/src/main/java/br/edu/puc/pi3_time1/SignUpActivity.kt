@@ -481,7 +481,7 @@ fun createNewAccount(
     onFailure: (Exception) -> Unit
 ) {
     val auth = Firebase.auth
-    val hashedPassword = hashPassword(password)
+    val obfuscatedPassword = obfuscatePassword(password, imei)
 
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener(activity) { task ->
@@ -501,7 +501,7 @@ fun createNewAccount(
                                             userId = userId,
                                             name = name,
                                             email = email,
-                                            hashedPassword = hashedPassword,
+                                            obfuscatedPassword = obfuscatedPassword,
                                             imei = imei,
                                             onSuccess = onSuccess,
                                             onFailure = onFailure
