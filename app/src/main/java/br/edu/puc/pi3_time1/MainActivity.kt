@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -17,12 +18,17 @@ import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -157,6 +163,7 @@ suspend fun fetchPasswordsForCategory(uid: String, category: String): List<Passw
     }
 }
 
+private lateinit var auth: FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -192,6 +199,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun PasswordManagerScreenPreview() {
+    Pi3_time1Theme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            PasswordManagerScreen(
+                onLogout = {},
+                onNavigateToCategories = {},
+                onNavigateToAccount = {},
+                onNavigateToQrCode = {},
+                snackbarMessage = null
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordManagerScreen(
@@ -210,6 +233,14 @@ fun PasswordManagerScreen(
     val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
 
     // Show Snackbar if a message is provided
     LaunchedEffect(snackbarMessage) {
@@ -462,30 +493,70 @@ fun ChooseActionDialog(
     onAddPassword: () -> Unit,
     onAddCategory: () -> Unit
 ) {
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Escolha uma Ação") },
+        containerColor = LightGray,
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "ADICIONAR SENHA/CATEGORIA",
+                    color = Black,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        },
         text = {
             Column {
                 Button(
-                    onClick = onAddPassword,
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = onAddCategory,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkBlue,
+                        contentColor = White
+                    )
                 ) {
-                    Text("Adicionar Nova Senha")
+                    Text(text = "Nova Categoria", fontWeight = FontWeight.ExtraBold)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = onAddCategory,
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = onAddPassword,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkBlue,
+                        contentColor = White
+                    )
                 ) {
-                    Text("Adicionar Nova Categoria")
+                    Text(text = "Nova Senha", fontWeight = FontWeight.ExtraBold)
                 }
+
             }
         },
         confirmButton = {},
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text("Cancelar")
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White
+                )
+            ) {
+                Text(text = "Cancelar", fontWeight = FontWeight.ExtraBold)
             }
         }
     )
@@ -605,13 +676,13 @@ fun AddCategoryDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Adicionar Nova Categoria") },
+        title = { Text("Adicionar Categoria") },
         text = {
             Column {
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
-                    label = { Text("Nome da Categoria") },
+                    label = { Text("Nome da categoria") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -635,20 +706,4 @@ fun AddCategoryDialog(
             }
         }
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PasswordManagerScreenPreview() {
-    Pi3_time1Theme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            PasswordManagerScreen(
-                onLogout = {},
-                onNavigateToCategories = {},
-                onNavigateToAccount = {},
-                onNavigateToQrCode = {},
-                snackbarMessage = null
-            )
-        }
-    }
 }

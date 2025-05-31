@@ -17,11 +17,11 @@ val provider = GoogleFont.Provider(
 )
 
 val InterFontFamily = FontFamily(
-    Font(googleFont = GoogleFont("Noto Serif Dives Akuru"), fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = GoogleFont("Noto Serif Dives Akuru"), fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = GoogleFont("Noto Serif Dives Akuru"), fontProvider = provider, weight = FontWeight.SemiBold),
-    Font(googleFont = GoogleFont("Noto Serif Dives Akuru"), fontProvider = provider, weight = FontWeight.Bold),
-    Font(googleFont = GoogleFont("Noto Serif Dives Akuru"), fontProvider = provider, weight = FontWeight.ExtraBold),
+    Font(googleFont = GoogleFont("Inter"), fontProvider = provider, weight = FontWeight.Normal),
+    Font(googleFont = GoogleFont("Inter"), fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = GoogleFont("Inter"), fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = GoogleFont("Inter"), fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = GoogleFont("Inter"), fontProvider = provider, weight = FontWeight.ExtraBold),
 )
 
 val AppTypography = Typography(
