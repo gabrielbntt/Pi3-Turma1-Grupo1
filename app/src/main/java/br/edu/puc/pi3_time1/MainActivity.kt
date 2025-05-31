@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +18,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
@@ -162,8 +167,6 @@ suspend fun fetchPasswordsForCategory(uid: String, category: String): List<Passw
         )
     }
 }
-
-private lateinit var auth: FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -419,6 +422,7 @@ fun CategoryCard(category: Category) {
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -562,111 +566,6 @@ fun ChooseActionDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddPasswordDialog(
-    onDismiss: () -> Unit,
-    onSave: (username: String?, password: String, description: String?, categoryName: String) -> Unit,
-    uid: String,
-    categories: List<String>
-) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text("Adicionar Nova Senha") },
-        text = {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    OutlinedTextField(
-                        value = if (selectedCategory.isEmpty()) "" else selectedCategory,
-                        onValueChange = { selectedCategory = it },
-                        label = { Text("Categoria") },
-                        placeholder = { Text("Categoria") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { expanded = true },
-                        readOnly = true
-                    )
-                    IconButton(
-                        onClick = { expanded = !expanded }
-                    ) {
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                            contentDescription = if (expanded) "Recolher" else "Expandir"
-                        )
-                    }
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            onClick = {
-                                selectedCategory = category
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Usuário (Opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Senha") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Descrição (Opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (password.isNotEmpty() && selectedCategory.isNotEmpty()) {
-                        onSave(if (username.isEmpty()) null else username, password, if (description.isEmpty()) null else description, selectedCategory)
-                    }
-                },
-                enabled = password.isNotEmpty() && selectedCategory.isNotEmpty()
-            ) {
-                Text("Salvar")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
 @Composable
 fun AddCategoryDialog(
     onDismiss: () -> Unit,
@@ -674,16 +573,48 @@ fun AddCategoryDialog(
 ) {
     var categoryName by remember { mutableStateOf("") }
 
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Adicionar Categoria") },
+        containerColor = LightGray,
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Adicionar Categoria",
+                    color = Black,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        },
         text = {
             Column {
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
-                    label = { Text("Nome da categoria") },
+                    label = { Text(text = "Nome da categoria", color = Gray) },
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
             }
@@ -695,14 +626,222 @@ fun AddCategoryDialog(
                         onSave(categoryName)
                     }
                 },
-                enabled = categoryName.isNotEmpty()
+                enabled = categoryName.isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f)
+                )
             ) {
-                Text("Salvar")
+                Text(text = "Salvar", fontWeight = FontWeight.ExtraBold)
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text("Cancelar")
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White
+                )
+            ) {
+                Text(text = "Cancelar", fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    )
+}
+
+@Composable
+fun AddPasswordDialog(
+    onDismiss: () -> Unit,
+    onSave: (username: String?, password: String, description: String?, categoryName: String) -> Unit,
+    uid: String,
+    categories: List<String>
+) {
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var description by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf("") }
+
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        containerColor = LightGray,
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Adicionar Senha",
+                    color = Black,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        },
+        text = {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 2.dp,
+                            color = DarkBlue,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { expanded = !expanded }
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (selectedCategory.isEmpty()) "Selecionar Categoria" else selectedCategory,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            contentDescription = if (expanded) "Recolher" else "Expandir",
+                            tint = DarkBlue
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier
+                            .width(250.dp)
+                            .heightIn(max = 200.dp)
+                            .background(
+                                color = LightGray,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = category,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Black
+                                    )
+                                },
+                                onClick = {
+                                    selectedCategory = category
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(text = "Usuário (opcional)", color = Gray) },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(text = "Senha", color = Gray) },
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha",
+                                tint = DarkBlue
+                            )
+                        }
+                    },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text(text = "Descrição (opcional)", color = Gray) },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (password.isNotEmpty() && selectedCategory.isNotEmpty()) {
+                        onSave(if (username.isEmpty()) null else username, password, if (description.isEmpty()) null else description, selectedCategory)
+                    }
+                },
+                enabled = password.isNotEmpty() && selectedCategory.isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f)
+                )
+            ) {
+                Text(text = "Salvar", fontWeight = FontWeight.ExtraBold)
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White
+                )
+            ) {
+                Text(text = "Cancelar", fontWeight = FontWeight.ExtraBold)
             }
         }
     )
