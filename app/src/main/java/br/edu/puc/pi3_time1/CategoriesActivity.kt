@@ -25,6 +25,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -32,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +51,7 @@ import androidx.compose.ui.text.TextStyle
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 fun renameCategory(
     userId: String,
@@ -147,7 +153,6 @@ fun deleteCategory(
         }
 }
 
-
 class CategoriesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -159,11 +164,11 @@ class CategoriesActivity : ComponentActivity() {
                         .wrapContentSize(Alignment.Center)
                         .width(412.dp)
                         .height(917.dp)
-                        .background(color = Color(0xFFFFFFFF))
-                    ,
+                        .background(color = Color(0xFFFFFFFF)),
                     onNavigateToMainActivity = {
                         startActivity(Intent(this@CategoriesActivity, MainActivity::class.java))
-                    }
+                    },
+                    snackbarMessage = intent.getStringExtra("SNACKBAR_MESSAGE")
                 )
             }
         }
@@ -171,17 +176,23 @@ class CategoriesActivity : ComponentActivity() {
 }
 
 @Composable
-fun Categories(modifier: Modifier = Modifier, onNavigateToMainActivity: () -> Unit) {
+fun Categories(
+    modifier: Modifier = Modifier,
+    onNavigateToMainActivity: () -> Unit,
+    snackbarMessage: String? = null
+) {
     val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
     var categories by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var refreshTrigger by remember { mutableStateOf(false) }
-
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var categoryToDelete by remember { mutableStateOf<String?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
     var categoryToEdit by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(uid, refreshTrigger) {
         try {
             isLoading = true
@@ -194,161 +205,209 @@ fun Categories(modifier: Modifier = Modifier, onNavigateToMainActivity: () -> Un
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Categorias",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
+    LaunchedEffect(snackbarMessage) {
+        if (!snackbarMessage.isNullOrEmpty()) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = snackbarMessage,
+                    actionLabel = "Entendido",
+                    duration = SnackbarDuration.Long
+                )
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = modifier
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .padding(bottom = 30.dp)
-                .width(412.dp)
-                .height(36.dp)
-        )
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(top = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Categorias",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(bottom = 30.dp)
+                    .width(412.dp)
+                    .height(36.dp)
+            )
 
-        if (isLoading) {
-            Text("Carregando categorias...", fontSize = 18.sp)
-        } else if (errorMessage != null) {
-            Text(errorMessage ?: "", color = Color.Red)
-        } else {
-            categories.forEach { category ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    TextField(
-                        value = category,
-                        onValueChange = {},
+            if (isLoading) {
+                Text("Carregando categorias...", fontSize = 18.sp)
+            } else if (errorMessage != null) {
+                Text(errorMessage ?: "", color = Color.Red)
+            } else {
+                categories.forEach { category ->
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .border(2.dp, Color(0xFF000000))
-                            .background(Color.White)
-                            .height(59.dp),
-                        enabled = false,
-                        textStyle = TextStyle(
-                            textAlign = TextAlign.Left,
-                            fontSize = 20.sp,
-                            color = Color.Black
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TextField(
+                            value = category,
+                            onValueChange = {},
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(2.dp, Color(0xFF000000))
+                                .background(Color.White)
+                                .height(59.dp),
+                            enabled = false,
+                            textStyle = TextStyle(
+                                textAlign = TextAlign.Left,
+                                fontSize = 20.sp,
+                                color = Color.Black
+                            )
                         )
-                    )
 
-                    Row {
-                        IconButton(onClick = {
-                            if (category != "Sites Web") {
-                                categoryToEdit = category
-                                showEditDialog = true
+                        Row {
+                            IconButton(
+                                onClick = {
+                                    if (category != "Sites Web") {
+                                        categoryToEdit = category
+                                        showEditDialog = true
+                                    }
+                                },
+                                enabled = category != "Sites Web"
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Editar categoria",
+                                    tint = Color(0xFF1A2C71)
+                                )
                             }
-                        },
 
-                            enabled = category != "Sites Web"
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Editar categoria",
-                                tint = Color(0xFF1A2C71)
-                            )
-                        }
-
-                        IconButton(onClick = {
-                            if (category != "Sites Web") {
-                                categoryToDelete = category
-                                showDeleteDialog = true
+                            IconButton(
+                                onClick = {
+                                    if (category != "Sites Web") {
+                                        categoryToDelete = category
+                                        showDeleteDialog = true
+                                    }
+                                },
+                                enabled = category != "Sites Web"
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Excluir categoria",
+                                    tint = Color(0xFF1A2C71)
+                                )
                             }
-                        },
-
-                            enabled = category != "Sites Web"
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Excluir categoria",
-                                tint = Color(0xFF1A2C71)
-                            )
                         }
                     }
                 }
             }
-        }
 
-        // Diálogo de exclusão
-        if (showDeleteDialog && categoryToDelete != null) {
-            DeleteCategoryDialog(
-                uid = uid,
-                categoryName = categoryToDelete!!,
-                onDismiss = {
-                    showDeleteDialog = false
-                    categoryToDelete = null
-                },
-                onConfirm = {
-                    deleteCategory(
-                        userId = uid,
-                        categoria = categoryToDelete!!,
-                        onSuccess = {
-                            refreshTrigger = !refreshTrigger
-                            showDeleteDialog = false
-                            categoryToDelete = null
-                        },
-                        onFailure = { e ->
-                            Log.e("Categories", "Erro ao excluir: $e")
-                            showDeleteDialog = false
-                            categoryToDelete = null
-                        }
-                    )
-                }
-            )
-        }
-        if (showEditDialog && categoryToEdit != null) {
-            EditCategoryDialog(
-                nomeAtual = categoryToEdit!!,
-                onDismiss = {
-                    showEditDialog = false
-                    categoryToEdit = null
-                },
-                onSave = { newCategoryName ->
-                    renameCategory(
-                        userId = uid,
-                        nomeAtual = categoryToEdit!!,
-                        novoNome = newCategoryName,
-                        onSuccess = {
-                            refreshTrigger = !refreshTrigger
-                            showEditDialog = false
-                            categoryToEdit = null
-                        },
-                        onFailure = { e ->
-                            Log.e("Categories", "Erro ao renomear: $e")
-                            showEditDialog = false
-                            categoryToEdit = null
-                        }
-                    )
-                }
-            )
-        }   
-        Button(
-            onClick = { onNavigateToMainActivity() },
-            Modifier
-                .border(width = 2.dp, Color(0xFF000000), shape = RoundedCornerShape(size = 100.dp))
-                .padding(1.dp)
-                .width(103.dp)
-                .height(40.dp)
-                .background(color = Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 100.dp))
-        ) {
-            Text(
-                text = "Retornar",
-                Modifier
-                    .width(55.dp)
-                    .height(20.dp)
-            )
+            if (showDeleteDialog && categoryToDelete != null) {
+                DeleteCategoryDialog(
+                    uid = uid,
+                    categoryName = categoryToDelete!!,
+                    onDismiss = {
+                        showDeleteDialog = false
+                        categoryToDelete = null
+                    },
+                    onConfirm = {
+                        deleteCategory(
+                            userId = uid,
+                            categoria = categoryToDelete!!,
+                            onSuccess = {
+                                refreshTrigger = !refreshTrigger
+                                showDeleteDialog = false
+                                categoryToDelete = null
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Categoria excluída com sucesso!",
+                                        actionLabel = "OK",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            },
+                            onFailure = { e ->
+                                Log.e("Categories", "Erro ao excluir: $e")
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Erro ao excluir categoria: ${e.message}",
+                                        actionLabel = "OK",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                }
+                                showDeleteDialog = false
+                                categoryToDelete = null
+                            }
+                        )
+                    }
+                )
+            }
+
+            if (showEditDialog && categoryToEdit != null) {
+                EditCategoryDialog(
+                    nomeAtual = categoryToEdit!!,
+                    onDismiss = {
+                        showEditDialog = false
+                        categoryToEdit = null
+                    },
+                    onSave = { newCategoryName ->
+                        renameCategory(
+                            userId = uid,
+                            nomeAtual = categoryToEdit!!,
+                            novoNome = newCategoryName,
+                            onSuccess = {
+                                refreshTrigger = !refreshTrigger
+                                showEditDialog = false
+                                categoryToEdit = null
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Categoria editada com sucesso!",
+                                        actionLabel = "OK",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            },
+                            onFailure = { e ->
+                                Log.e("Categories", "Erro ao renomear: $e")
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Erro ao editar categoria: ${e.message}",
+                                        actionLabel = "OK",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                }
+                                showEditDialog = false
+                                categoryToEdit = null
+                            }
+                        )
+                    }
+                )
+            }
+
+            Button(
+                onClick = { onNavigateToMainActivity() },
+                modifier = Modifier
+                    .border(width = 2.dp, Color(0xFF000000), shape = RoundedCornerShape(size = 100.dp))
+                    .padding(1.dp)
+                    .width(103.dp)
+                    .height(40.dp)
+                    .background(color = Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 100.dp))
+            ) {
+                Text(
+                    text = "Retornar",
+                    modifier = Modifier
+                        .width(55.dp)
+                        .height(20.dp)
+                )
+            }
         }
     }
 }
+
 @Composable
 fun EditCategoryDialog(
     nomeAtual: String,
@@ -390,23 +449,23 @@ fun EditCategoryDialog(
         }
     )
 }
+
 @Composable
 fun DeleteCategoryDialog(
     categoryName: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    uid: String,
+    uid: String
 ) {
-
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = { Text("Tem Certeza que deseja excluir a Categoria?") },
         text = {
             Column {
-                Text(text = "Atenção: Ao excluir a categoria" +
-                        " ${categoryName}, " +
-                        "as senhas dessa categoria serão excluÍdas.")
-
+                Text(
+                    text = "Atenção: Ao excluir a categoria ${categoryName}, " +
+                            "as senhas dessa categoria serão excluídas."
+                )
             }
         },
         confirmButton = {
@@ -425,6 +484,7 @@ fun DeleteCategoryDialog(
         }
     )
 }
+
 @Preview(showBackground = true)
 @Composable
 fun CategoriesPreview() {
