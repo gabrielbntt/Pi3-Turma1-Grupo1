@@ -24,16 +24,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -329,9 +333,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Pi3_time1Theme {
+            var isDarkTheme by remember { mutableStateOf(false) }
+
+            Pi3_time1Theme (darkTheme = isDarkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     PasswordManagerScreen(
+                        isDarkTheme = isDarkTheme,
+                        onToggleTheme = { isDarkTheme = !isDarkTheme },
                         onNavigateToCategories = {
                             startActivity(Intent(this@MainActivity, CategoriesActivity::class.java))
                         },
@@ -362,6 +370,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordManagerScreen(
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     onLogout: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToAccount: () -> Unit,
@@ -447,6 +457,26 @@ fun PasswordManagerScreen(
                     onClick = { onLogout() },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                Button(
+                    onClick = onToggleTheme,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(if (isDarkTheme) "Modo Claro" else "Modo Escuro")
+                }
             }
         }
     ) {
@@ -1158,7 +1188,9 @@ fun PasswordManagerScreenPreview() {
                 onNavigateToCategories = {},
                 onNavigateToAccount = {},
                 onNavigateToQrCode = {},
-                snackbarMessage = null
+                snackbarMessage = null,
+                isDarkTheme = false,
+                onToggleTheme = {}
             )
         }
     }
