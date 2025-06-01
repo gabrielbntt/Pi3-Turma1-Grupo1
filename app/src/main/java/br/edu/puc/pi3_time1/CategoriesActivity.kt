@@ -250,8 +250,7 @@ fun Categories(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextField(
                             value = category,
@@ -266,42 +265,38 @@ fun Categories(
                                 textAlign = TextAlign.Left,
                                 fontSize = 20.sp,
                                 color = Color.Black
-                            )
+                            ),
+                            trailingIcon = {
+                                if (category != "Sites Web") {
+                                    Row {
+                                        IconButton(
+                                            onClick = {
+                                                categoryToEdit = category
+                                                showEditDialog = true
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Editar categoria",
+                                                tint = Color(0xFF1A2C71)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                categoryToDelete = category
+                                                showDeleteDialog = true
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Excluir categoria",
+                                                tint = Color(0xFF1A2C71)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         )
-
-                        Row {
-                            IconButton(
-                                onClick = {
-                                    if (category != "Sites Web") {
-                                        categoryToEdit = category
-                                        showEditDialog = true
-                                    }
-                                },
-                                enabled = category != "Sites Web"
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Editar categoria",
-                                    tint = Color(0xFF1A2C71)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    if (category != "Sites Web") {
-                                        categoryToDelete = category
-                                        showDeleteDialog = true
-                                    }
-                                },
-                                enabled = category != "Sites Web"
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Excluir categoria",
-                                    tint = Color(0xFF1A2C71)
-                                )
-                            }
-                        }
                     }
                 }
             }
