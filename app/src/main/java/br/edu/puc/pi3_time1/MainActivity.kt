@@ -653,8 +653,6 @@ fun PasswordManagerScreen(
                     }
                     categories = loadedCategories
                     refreshTrigger = !refreshTrigger
-                    categories = loadedCategories
-                    refreshTrigger = !refreshTrigger
                     snackbarHostState.showSnackbar(
                         message = "Categoria adicionada com sucesso!",
                         actionLabel = "OK",
@@ -698,7 +696,6 @@ fun PasswordManagerScreen(
                             Category(name = categoryName, services = passwords)
                         }
                         categories = loadedCategories
-                        categories = loadedCategories
                         refreshTrigger = !refreshTrigger
                         snackbarHostState.showSnackbar(
                             message = "Senha editada com sucesso!",
@@ -734,7 +731,6 @@ fun PasswordManagerScreen(
                             val passwords = fetchPasswordsForCategory(uid, categoryName)
                             Category(name = categoryName, services = passwords)
                         }
-                        categories = loadedCategories
                         categories = loadedCategories
                         refreshTrigger = !refreshTrigger
                         snackbarHostState.showSnackbar(
