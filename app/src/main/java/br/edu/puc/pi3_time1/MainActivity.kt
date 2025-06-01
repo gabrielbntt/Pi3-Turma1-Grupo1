@@ -97,7 +97,8 @@ data class PasswordEntry(
     val username: String?,
     val password: String,
     val description: String?,
-    val acesstoken: String
+    val acesstoken: String,
+    val url: String
 )
 
 data class Category(
@@ -288,7 +289,8 @@ fun savePasswordEntry(uid: String, categoryName: String, title: String, username
         username = username,
         password = obfuscatedPassword,
         description = description,
-        acesstoken = accessToken
+        acesstoken = accessToken,
+        url = "https://smile.com"
     )
 
     db.collection("Collections")
@@ -324,7 +326,8 @@ suspend fun fetchPasswordsForCategory(uid: String, category: String): List<Passw
             username = doc.getString("username"),
             password = doc.getString("password") ?: "",
             description = doc.getString("description"),
-            acesstoken = doc.getString("acesstoken") ?: ""
+            acesstoken = doc.getString("acesstoken") ?: "",
+            url = "https://smile.com"
         )
     }
 }
