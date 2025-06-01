@@ -210,7 +210,41 @@ fun generateAccessToken(): String {
     val randomBytes = ByteArray(32).apply { SecureRandom().nextBytes(this) }
     return android.util.Base64.encodeToString(randomBytes, android.util.Base64.NO_WRAP)
 }
+fun updateAccessToken(
+    uid: String,
+    categoryName: String,
+    title: String,
+    newAccessToken: String,
+    onSuccess: () -> Unit,
+    onFailure: (Exception) -> Unit
+) {
+    val db = Firebase.firestore
 
+    db.collection("Collections")
+        .document(uid)
+        .collection(categoryName)
+        .whereEqualTo("title", title)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            if (querySnapshot.isEmpty) {
+                onFailure(Exception("Entrada não encontrada para o título: $title"))
+                return@addOnSuccessListener
+            }
+            val document = querySnapshot.documents.first()
+
+            document.reference
+                .update("acesstoken", newAccessToken)
+                .addOnSuccessListener {
+                    onSuccess()
+                }
+                .addOnFailureListener { e ->
+                    onFailure(e)
+                }
+        }
+        .addOnFailureListener { e ->
+            onFailure(e)
+        }
+}
 fun createCategory(uid: String, categories: List<String>) {
     val db = Firebase.firestore
     val vazio = hashMapOf("placeholder" to true)
@@ -554,7 +588,6 @@ fun PasswordManagerScreen(
             onSave = { title, username, password, description, categoryName ->
                 savePasswordEntry(uid, categoryName, title, username, password, description, accessToken)
                 showAddPasswordDialog = false
-                // Atualizar a lista de categorias
                 scope.launch {
                     val categoryNames = fetchCategories(uid)
                     val loadedCategories = categoryNames.map { categoryName ->
@@ -562,12 +595,17 @@ fun PasswordManagerScreen(
                         Category(name = categoryName, services = passwords)
                     }
                     categories = loadedCategories
-                }
-                refreshTrigger = !refreshTrigger
-            },
+                    refreshTrigger = !refreshTrigger
+                    snackbarHostState.showSnackbar(
+                        message = "Senha adicionada com sucesso!",
+                        actionLabel = "OK",
+                        duration = SnackbarDuration.Short
+                    )
+                }},
             uid = uid,
             categories = categories.map { it.name },
             accessToken = accessToken
+
         )
     }
 
@@ -584,8 +622,14 @@ fun PasswordManagerScreen(
                         Category(name = categoryName, services = passwords)
                     }
                     categories = loadedCategories
+                    refreshTrigger = !refreshTrigger
+                    categories = loadedCategories
+                    refreshTrigger = !refreshTrigger
+                    snackbarHostState.showSnackbar(
+                        message = "Categoria adicionada com sucesso!",
+                        actionLabel = "OK",
+                        duration = SnackbarDuration.Short)
                 }
-                refreshTrigger = !refreshTrigger
             }
         )
     }
@@ -624,11 +668,17 @@ fun PasswordManagerScreen(
                             Category(name = categoryName, services = passwords)
                         }
                         categories = loadedCategories
+                        categories = loadedCategories
+                        refreshTrigger = !refreshTrigger
+                        snackbarHostState.showSnackbar(
+                            message = "Senha editada com sucesso!",
+                            actionLabel = "OK",
+                            duration = SnackbarDuration.Short
+                        )
                     }
                 }
                 showEditPasswordDialog = false
                 passwordToEdit = null
-                refreshTrigger = !refreshTrigger
             }
         )
     }
@@ -655,11 +705,16 @@ fun PasswordManagerScreen(
                             Category(name = categoryName, services = passwords)
                         }
                         categories = loadedCategories
+                        categories = loadedCategories
+                        refreshTrigger = !refreshTrigger
+                        snackbarHostState.showSnackbar(
+                            message = "Senha excluída com sucesso!",
+                            actionLabel = "OK",
+                            duration = SnackbarDuration.Short)
                     }
                 }
                 showDeletePasswordDialog = false
                 passwordToDelete = null
-                refreshTrigger = !refreshTrigger
 
             }
         )
@@ -987,7 +1042,7 @@ fun AddCategoryDialog(
 }
 @Composable
 fun EditPasswordDialog(
-    currentPassword: PasswordEntry, 
+    currentPassword: PasswordEntry,
     onDismiss: () -> Unit,
     onSave: (title: String, username: String?, password: String, description: String?) -> Unit
 ) {
@@ -1062,7 +1117,7 @@ fun EditPasswordDialog(
 }
 @Composable
 fun DeletePasswordDialog(
-    passwordTitle: String, 
+    passwordTitle: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
