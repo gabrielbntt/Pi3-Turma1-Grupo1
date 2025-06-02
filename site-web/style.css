@@ -1,0 +1,15 @@
+body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 2rem auto;
+      text-align: center;
+    }
+    #qrcode img {
+      width: 200px;
+      height: 200px;
+    }
+    #status {
+      margin-top: 1rem;
+      white-space: pre-wrap;
+      font-weight: bold;
+    }
