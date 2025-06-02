@@ -5,8 +5,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -44,18 +46,22 @@ class AccountActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Pi3_time1Theme {
+                Surface(modifier = Modifier.fillMaxSize()) {
                     AccountHandler(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
                         onNavigateToChangePassword = {
-                            startActivity(Intent(this@AccountActivity, ChangePasswordActivity::class.java))
+                            startActivity(
+                                Intent(
+                                    this@AccountActivity,
+                                    ChangePasswordActivity::class.java
+                                )
+                            )
                         },
                         onNavigateToMain = {
                             startActivity(Intent(this@AccountActivity, MainActivity::class.java))
                         },
                         resendEmail = user.sendEmailVerification()
                     )
+                }
                 }
             }
         }
@@ -67,8 +73,7 @@ fun AccountPreview() {
     Pi3_time1Theme {
             AccountHandler(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+                    .fillMaxSize(),
                 onNavigateToChangePassword = {},
                 onNavigateToMain = {},
                 resendEmail = Tasks.forResult(null),
@@ -77,6 +82,7 @@ fun AccountPreview() {
     }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountHandler(
     modifier: Modifier = Modifier,
@@ -88,6 +94,7 @@ fun AccountHandler(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var verifiedText by remember { mutableStateOf<String>("Verificando...") }
     var isVerified by remember { mutableStateOf<Boolean?>(null) }
+
     LaunchedEffect(Unit) {
         val userId = Firebase.auth.currentUser?.uid
         if (userId != null) {
@@ -99,7 +106,7 @@ fun AccountHandler(
                     if (document.exists()) {
                         userData = UserData(
                             name = document.getString("name") ?: "Desconhecido",
-                            email = document.getString("email") ?: "N/A",
+                            email = document.getString("email") ?: "N/A"
                         )
                     } else {
                         errorMessage = "Dados do usuário não encontrados."
@@ -117,83 +124,147 @@ fun AccountHandler(
         }
     }
 
-    Column(
+    LaunchedEffect(resendEmail) {
+        resendEmail.addOnSuccessListener {
+            println("Email de verificação reenviado com sucesso!")
+        }.addOnFailureListener { e ->
+            errorMessage = "Erro ao reenviar email: ${e.message}"
+        }
+    }
+
+    Scaffold(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-
-    ) {
-        if (userData != null) {
-            Text(
-                text = "Conta",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-
-            )
-            Text(
-                text ="Nome: ${ userData!!.name}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Email: ${userData!!.email}",
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = verifiedText,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 16.sp
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Quer trocar sua senha?"
-                )
-                Button(
-                    onClick = { onNavigateToChangePassword() }
-                ) {
-                    Text(text = "Alterar Senha")
-                }
-            }
-            Text(
-                text = "Reenviar email de verificação",
-            color = Color.Blue,
-            textDecoration = TextDecoration.Underline,
-            fontSize = 16.sp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 2.dp, bottom = 8.dp)
-                .clickable {
-                    resendEmail
+        topBar = {
+            TopAppBar(
+                title = {
                 },
-            textAlign = TextAlign.Center
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF253475)
+                )
             )
-            Spacer(modifier = Modifier.padding(bottom = 32.dp))
-                Button(onClick = { onNavigateToMain() }) {
-                    Text(text = "Retornar")
+        },
+        bottomBar = {
+            BottomAppBar(
+                content = {
 
+                },
+                containerColor = Color(0xFF253475)
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (userData != null) {
+                Text(
+                    text = "Conta",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(15.dp))
+                Row(
+                    modifier = Modifier
+                        .border(width = 2.dp, color = Color(0xFF253475), shape = RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Nome: ${userData!!.name}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(5.dp))
+                Row(
+                    modifier = Modifier
+                        .border(width = 2.dp, color = Color(0xFF253475), shape = RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Email: ${userData!!.email}",
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = verifiedText,
+                        color = if (isVerified == true) Color.Black else Color.Red,
+                        fontSize = 14.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Senha e autenticação"
+                    )
+                    Button(
+                        onClick = onNavigateToChangePassword,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF253475)
+                        )
+                    ) {
+                        Text(text = "Alterar senha", color = Color.White)
+                    }
+                }
+                if (isVerified == true){
+
+                }
+                else{
+                Text(
+                    text = "Reenviar email de verificação",
+                    color = Color.Blue,
+                    textDecoration = TextDecoration.Underline,
+                    fontSize = 16.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp, bottom = 8.dp)
+                        .clickable {
+                            resendEmail
+                        },
+                    textAlign = TextAlign.Center,
+
+                )}
+                Button(
+                    onClick = onNavigateToMain,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF253475)
+                    ),
+                    modifier = Modifier
+                        .width(150.dp)
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "Voltar",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+            } else if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(16.dp)
+                )
+            } else {
+                Text(
+                    text = "Carregando dados...",
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
-        } else if (errorMessage != null) {
-            Text(
-                text = errorMessage!!,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-        } else {
-            Text(
-                text = "Carregando dados...",
-                fontSize = 16.sp,
-                modifier = Modifier.padding(16.dp)
-            )
         }
     }
 }
