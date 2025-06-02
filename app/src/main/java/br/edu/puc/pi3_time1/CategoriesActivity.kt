@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -29,8 +33,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -157,24 +164,20 @@ class CategoriesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            Surface(modifier = Modifier.fillMaxSize()){
             Pi3_time1Theme {
                 Categories(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentSize(Alignment.Center)
-                        .width(412.dp)
-                        .height(917.dp)
-                        .background(color = Color(0xFFFFFFFF)),
                     onNavigateToMainActivity = {
                         startActivity(Intent(this@CategoriesActivity, MainActivity::class.java))
                     },
                     snackbarMessage = intent.getStringExtra("SNACKBAR_MESSAGE")
                 )
-            }
+            } }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Categories(
     modifier: Modifier = Modifier,
@@ -218,15 +221,30 @@ fun Categories(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = modifier
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF253475)
+                )
+            )
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = Color(0xFF253475),
+                content = {
+
+                }
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(top = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -235,9 +253,8 @@ fun Categories(
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .padding(bottom = 30.dp)
-                    .width(412.dp)
-                    .height(36.dp)
+                    .padding(top = 16.dp, bottom = 16.dp)
+
             )
 
             if (isLoading) {
@@ -257,14 +274,15 @@ fun Categories(
                             onValueChange = {},
                             modifier = Modifier
                                 .weight(1f)
-                                .border(2.dp, Color(0xFF000000))
+                                .border(2.dp, Color(0xFF253475))
                                 .background(Color.White)
                                 .height(59.dp),
                             enabled = false,
                             textStyle = TextStyle(
                                 textAlign = TextAlign.Left,
                                 fontSize = 20.sp,
-                                color = Color.Black
+                                color = Color.Black,
+                                fontWeight = FontWeight(800)
                             ),
                             trailingIcon = {
                                 if (category != "Sites Web") {
@@ -382,20 +400,22 @@ fun Categories(
                     }
                 )
             }
-
+            Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = { onNavigateToMainActivity() },
                 modifier = Modifier
                     .border(width = 2.dp, Color(0xFF000000), shape = RoundedCornerShape(size = 100.dp))
-                    .padding(1.dp)
-                    .width(103.dp)
-                    .height(40.dp)
+                    .width(160.dp)
+                    .height(55.dp)
                     .background(color = Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 100.dp))
+
             ) {
                 Text(
-                    text = "Retornar",
+                    text = "Voltar",
+                    fontSize =16.sp,
+                    fontWeight = FontWeight(700),
                     modifier = Modifier
-                        .width(55.dp)
+                        .width(48.dp)
                         .height(20.dp)
                 )
             }
