@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,12 +31,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -54,6 +56,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -61,6 +64,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,12 +78,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import br.edu.puc.pi3_time1.ui.theme.Black
+import br.edu.puc.pi3_time1.ui.theme.DarkBlue
+import br.edu.puc.pi3_time1.ui.theme.ErrorRed
+import br.edu.puc.pi3_time1.ui.theme.Gray
+import br.edu.puc.pi3_time1.ui.theme.LightGray
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
+import br.edu.puc.pi3_time1.ui.theme.White
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -218,7 +232,6 @@ fun generateAccessToken(): String {
     val randomBytes = ByteArray(32).apply { SecureRandom().nextBytes(this) }
     return android.util.Base64.encodeToString(randomBytes, android.util.Base64.NO_WRAP)
 }
-
 fun updateAccessToken(
     uid: String,
     categoryName: String,
@@ -262,8 +275,7 @@ fun createCategory(uid: String, categories: List<String>) {
         db.collection("Collections")
             .document(uid)
             .collection(categoryName)
-            .document("2")
-            .set(vazio)
+            .add(vazio)
     }
 
     val docRef = db.collection("Collections").document(uid)
@@ -314,7 +326,6 @@ suspend fun fetchCategories(uid: String): List<String> {
     val db = Firebase.firestore
     val docRef = db.collection("Collections").document(uid)
     val snapshot = docRef.get().await()
-
     return snapshot.get("categoriesList") as? List<String> ?: emptyList()
 }
 
@@ -333,7 +344,7 @@ suspend fun fetchPasswordsForCategory(uid: String, category: String): List<Passw
             password = doc.getString("password") ?: "",
             description = doc.getString("description"),
             acesstoken = doc.getString("acesstoken") ?: "",
-            url = doc.getString("url") ?: "",
+            url = doc.getString("url") ?: ""
         )
     }
 }
@@ -342,13 +353,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var isDarkTheme by remember { mutableStateOf(false) }
-
-            Pi3_time1Theme (darkTheme = isDarkTheme) {
+            Pi3_time1Theme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     PasswordManagerScreen(
-                        isDarkTheme = isDarkTheme,
-                        onToggleTheme = { isDarkTheme = !isDarkTheme },
                         onNavigateToCategories = {
                             startActivity(Intent(this@MainActivity, CategoriesActivity::class.java))
                         },
@@ -379,8 +386,6 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordManagerScreen(
-    isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit,
     onLogout: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToAccount: () -> Unit,
@@ -466,26 +471,6 @@ fun PasswordManagerScreen(
                     onClick = { onLogout() },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = onToggleTheme,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(6.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(if (isDarkTheme) "Modo Claro" else "Modo Escuro")
-                }
             }
         }
     ) {
@@ -498,7 +483,12 @@ fun PasswordManagerScreen(
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Pesquisar") },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .background(
+                                    color = Color(0xFFFFFFFF),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .fillMaxWidth()
                         )
                     },
                     navigationIcon = {
@@ -507,36 +497,98 @@ fun PasswordManagerScreen(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu"
-                            )
+                                contentDescription = "Menu",
+                                tint = Color(0xFFFFFFFF),
+
+                                )
                         }
-                    }
-                )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFF253475)
+                    ))
             },
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { showChooseActionDialog = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
+                Box(
                     modifier = Modifier
                         .size(80.dp)
                         .padding(16.dp)
+                        .border(width = 2.dp, color = Color(0xFF000000), shape = CircleShape)
+                        .background(color = Color(0xFFFFFFFF), shape = CircleShape)
+                        .clickable { showChooseActionDialog = true }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Filled.Add,
                         contentDescription = "Adicionar",
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier
+                            .size(25.dp)
+                            .align(Alignment.Center),
+                        tint = Color.Black
                     )
                 }
             },
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { innerPadding ->
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                BottomAppBar(
+                    containerColor = Color(0xFF253475),
+                    tonalElevation = 2.dp,
+                    content = {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Button(
+                                onClick = {
+                                    when (isVerified) {
+                                        true -> onNavigateToQrCode()
+                                        false -> {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Por favor, verifique seu email antes de usar o leitor de QR code.",
+                                                    actionLabel = "OK",
+                                                    duration = SnackbarDuration.Long
+                                                )
+                                            }
+                                        }
+                                        null -> {}
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(63.7.dp)
+                                    .height(63.7.dp)
+                                    .border(width = 2.dp, color = Color(0xFF000000), shape = CircleShape),
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(color = Color(0xFFFFFFFF), shape = CircleShape)
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.qr_code_logo),
+                                            contentDescription = "Ícone QR Code",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    contentPadding = PaddingValues(
+                        top = 16.dp,
+                        bottom = 16.dp,
+                        start = 16.dp,
+                        end = 16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (filteredCategories.isEmpty()) {
@@ -565,44 +617,7 @@ fun PasswordManagerScreen(
                         }
                     }
                 }
-                Button(
-                    onClick = {
-                        when (isVerified) {
-                            true -> onNavigateToQrCode()
-                            false -> {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = "Por favor, verifique seu email antes de usar o leitor de QR code.",
-                                        actionLabel = "OK",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                }
-                            }
-                            null -> {}
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .width(63.7.dp)
-                        .height(63.7.dp)
-                        .border(width = 2.dp, color = Color(0xFF000000), shape = CircleShape),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(color = Color(0xFFFFFFFF), shape = CircleShape)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.qr_code_logo),
-                                contentDescription = "Icone QR Code",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
-                }
+
             }
         }
     }
@@ -770,11 +785,15 @@ fun CategoryCard(
 
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 2.dp,
+                color = Color(0xFF253475),
+                shape = RoundedCornerShape(8.dp)
+            ),
+
+        ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier
@@ -787,10 +806,12 @@ fun CategoryCard(
             ) {
                 Text(
                     text = category.name,
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight(800)
                 )
                 Icon(
                     imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                    tint = Color(0xFF253475),
                     contentDescription = if (expanded) "Recolher" else "Expandir"
                 )
             }
@@ -886,22 +907,23 @@ fun ChooseActionDialog(
     onAddCategory: () -> Unit
 ) {
     AlertDialog(
+        containerColor = LightGray,
         onDismissRequest = { onDismiss() },
-        title = { Text("Escolha uma Ação") },
+        title = { Text("Adicionar") },
         text = {
             Column {
                 Button(
                     onClick = onAddPassword,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Adicionar Nova Senha")
+                    Text("Nova Senha")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = onAddCategory,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Adicionar Nova Categoria")
+                    Text("Nova Categoria")
                 }
             }
         },
@@ -929,81 +951,149 @@ fun AddPasswordDialog(
     var description by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Adicionar Nova Senha") },
+        containerColor = LightGray,
+        title = { Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Adicionar Senha",
+                color = Black,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.ExtraBold
+            )
+        }
+        },
         text = {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 2.dp,
+                            color = DarkBlue,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { expanded = !expanded }
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = if (selectedCategory.isEmpty()) "" else selectedCategory,
-                        onValueChange = { selectedCategory = it },
-                        label = { Text("Categoria") },
-                        placeholder = { Text("Categoria") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { expanded = true },
-                        readOnly = true
-                    )
-                    IconButton(
-                        onClick = { expanded = !expanded }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text(
+                            text = if (selectedCategory.isEmpty()) "Selecionar Categoria" else selectedCategory,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
                         Icon(
                             imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                            contentDescription = if (expanded) "Recolher" else "Expandir"
+                            contentDescription = if (expanded) "Recolher" else "Expandir",
+                            tint = DarkBlue
                         )
                     }
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            onClick = {
-                                selectedCategory = category
-                                expanded = false
-                            }
-                        )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier
+                            .width(250.dp)
+                            .heightIn(max = 200.dp)
+                            .background(
+                                color = LightGray,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = category,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Black
+                                    )
+                                },
+                                onClick = {
+                                    selectedCategory = category
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Título") },
+                    label = { Text("Título", color = Gray) },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Usuário (Opcional)") },
+                    label = { Text("Usuário (Opcional)", color = Gray) },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Senha") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    label = { Text(text = "Senha", color = Gray) },
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha",
+                                tint = DarkBlue
+                            )
+                        }
+                    },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Descrição (Opcional)") },
+                    label = { Text("Descrição (Opcional)", color = Gray) },
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -1022,13 +1112,28 @@ fun AddPasswordDialog(
                         )
                     }
                 },
-                enabled = title.isNotEmpty() && password.isNotEmpty() && selectedCategory.isNotEmpty()
+                enabled = title.isNotEmpty() && password.isNotEmpty() && selectedCategory.isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f))
+
             ) {
-                Text("Salvar")
+                Text("Salvar", fontWeight = FontWeight.ExtraBold)
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = {
+                onDismiss()
+            },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White
+                )
+            ) {
                 Text("Cancelar")
             }
         }
@@ -1044,6 +1149,7 @@ fun AddCategoryDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
+        containerColor = LightGray,
         title = { Text("Adicionar Nova Categoria") },
         text = {
             Column {
@@ -1052,6 +1158,15 @@ fun AddCategoryDialog(
                     onValueChange = { categoryName = it },
                     label = { Text("Nome da Categoria") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
             }
@@ -1063,13 +1178,23 @@ fun AddCategoryDialog(
                         onSave(categoryName)
                     }
                 },
-                enabled = categoryName.isNotEmpty()
+                enabled = categoryName.isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f))
             ) {
                 Text("Salvar")
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = { onDismiss() },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White)) {
                 Text("Cancelar")
             }
         }
@@ -1182,6 +1307,21 @@ fun DeletePasswordDialog(
             }
         }
     )
+}
+@Preview(showBackground = true)
+@Composable
+fun PasswordManagerScreenPreview() {
+    Pi3_time1Theme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            PasswordManagerScreen(
+                onLogout = {},
+                onNavigateToCategories = {},
+                onNavigateToAccount = {},
+                onNavigateToQrCode = {},
+                snackbarMessage = null
+            )
+        }
+    }
 }
 
 suspend fun validateLogin(partnerUrl: String, loginToken: String) {

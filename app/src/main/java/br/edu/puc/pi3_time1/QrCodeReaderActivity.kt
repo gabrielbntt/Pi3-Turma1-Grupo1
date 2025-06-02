@@ -95,7 +95,6 @@ fun verificarToken(loginToken: String, firestore: FirebaseFirestore, activity: A
 
             } else {
                 Log.d("QRCode", "Token não encontrado no Firestore")
-                // Mostrar erro, feedback, etc.
             }
         }
         .addOnFailureListener { e ->
@@ -147,7 +146,6 @@ fun QrCodeScannerScreen(
                 )
             }
 
-            // Exibe o QR Code detectado na parte inferior da tela
             Column(
                 modifier = Modifier
                     .padding(16.dp)
@@ -240,7 +238,7 @@ fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
                         imageAnalyzer
                     )
                 } catch (e: Exception) {
-//                    Log.e("CameraPreviewScreen", "Erro ao vincular a câmera", e)
+                    Log.e("CameraPreviewScreen", "Erro ao vincular a câmera", e)
                 }
             }, ContextCompat.getMainExecutor(ctx))
             previewView
@@ -262,16 +260,15 @@ private fun processImageProxy(
         .addOnSuccessListener { barcodes ->
             barcodes.forEach { barcode ->
                 barcode.rawValue?.let {
-                    // Passa o valor do QR Code detectado para o callback
+
                     onQrCodeDetected(it)
                 }
             }
         }
         .addOnFailureListener {
-//            Log.e("CameraPreviewScreen", "Falha na análise da imagem", it)
+           Log.e("CameraPreviewScreen", "Falha na análise da imagem", it)
         }
         .addOnCompleteListener {
-            // É crucial fechar a ImageProxy para liberar o buffer de imagem
             imageProxy.close()
         }
 }
