@@ -1,6 +1,7 @@
 package br.edu.puc.pi3_time1
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -18,7 +19,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 
@@ -37,13 +40,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
 class QrCodeReaderActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -61,6 +73,34 @@ class QrCodeReaderActivity : ComponentActivity() {
             }
         }
     }
+
+}
+
+fun verificarToken(loginToken: String, firestore: FirebaseFirestore, activity: Activity) {
+    val loginRef = firestore.collection("login").document(loginToken)
+
+    loginRef.get()
+        .addOnSuccessListener { document ->
+            if (document.exists()) {
+                Log.d("QRCode", "Token válido encontrado no Firestore")
+                val siteUrl = document.getString("partnerUrl")
+                if (siteUrl != null) {
+                    Log.d("Firestore", "URL do site: $siteUrl")
+                    CoroutineScope(Dispatchers.IO).launch {
+                        validateLogin(siteUrl, loginToken)
+                    }
+                } else {
+                    Log.d("Firestore", "Campo partnerUrl não encontrado no documento")
+                }
+
+            } else {
+                Log.d("QRCode", "Token não encontrado no Firestore")
+                // Mostrar erro, feedback, etc.
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e("QRCode", "Erro ao acessar Firestore", e)
+        }
 }
 
 @Composable
@@ -70,25 +110,25 @@ fun QrCodeScannerScreen(
 
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
-                android.Manifest.permission.CAMERA
+                Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
     var detectedQrCode by remember { mutableStateOf<String?>(null) }
 
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
             hasCameraPermission = isGranted
-        }
+    }
 
     LaunchedEffect(key1 = true) {
         if (!hasCameraPermission) {
-            launcher.launch(android.Manifest.permission.CAMERA)
+            launcher.launch(Manifest.permission.CAMERA)
         }
     }
 
@@ -97,10 +137,11 @@ fun QrCodeScannerScreen(
             Box(modifier = Modifier.weight(1f)) {
                 CameraPreviewScreen(
                     onQrCodeDetected = { scannedQrCode ->
-                        // Evita múltiplos detecções rápidas do mesmo QR Code
                         if (detectedQrCode == null) {
                             detectedQrCode = scannedQrCode
                             onQrCodeDetected(scannedQrCode)
+
+
                         }
                     }
                 )
@@ -110,20 +151,28 @@ fun QrCodeScannerScreen(
             Column(
                 modifier = Modifier
                     .padding(16.dp)
-                    .align(Alignment.CenterHorizontally)
+                    .align(Alignment.CenterHorizontally),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (detectedQrCode != null) {
+                detectedQrCode?.let {
                     Text("QR Code Detectado:")
-                    Text(detectedQrCode.orEmpty()) // Exibe o QR Code detectado
-                } else {
-                    Button(onClick = {onNavigateBack()}) {
-                        Text(text = "Retornar")
-                    }
+                    Text(it)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(onClick = onNavigateBack) {
+                    Text("Retornar")
+                }
+            }
+
+            LaunchedEffect(detectedQrCode) {
+                if (detectedQrCode != null) {
+                    delay(2000)
+                    detectedQrCode = null
                 }
             }
 
         } else {
-            // Se a permissão não foi concedida, exibe uma mensagem e um botão para solicitar novamente
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -131,27 +180,22 @@ fun QrCodeScannerScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("A permissão da câmera é necessária para ler QR Codes.")
                     Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) {
-                        Text("Solicitar Permissão da Câmera")
+                        Text("Solicitar Permissão de Câmera")
                     }
                 }
             }
-        }
-    }
-
-    // Reset detectedQrCode after it's displayed to allow scanning another one
-    LaunchedEffect(key1 = detectedQrCode) {
-        if (detectedQrCode != null) {
-            // Você pode adicionar um pequeno delay aqui se quiser que o usuário veja o código por um tempo
-            // delay(2000) // Exemplo: espera 2 segundos antes de resetar
-            detectedQrCode = null // Reseta para permitir nova detecção
         }
     }
 }
 
 @Composable
 fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
+    val firestore = Firebase.firestore
     val context = LocalContext.current
+    val activity = context as Activity
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    var qrCodeContent by remember { mutableStateOf("") }
 
     AndroidView(
         factory = { ctx ->
@@ -165,9 +209,7 @@ fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
 
-                val cameraSelector = CameraSelector.Builder()
-                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                    .build()
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
                 val options = BarcodeScannerOptions.Builder()
                     .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
@@ -182,6 +224,9 @@ fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
                             processImageProxy(barcodeScanner, imageProxy) { barcode ->
                                 // Chama o callback quando um QR Code é detectado
                                 onQrCodeDetected(barcode)
+                                if (barcode.isNotBlank()) {
+                                    verificarToken(barcode, firestore, activity)
+                                }
                             }
                         }
                     }
@@ -195,7 +240,7 @@ fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
                         imageAnalyzer
                     )
                 } catch (e: Exception) {
-                    Log.e("CameraPreviewScreen", "Erro ao vincular a câmera", e)
+//                    Log.e("CameraPreviewScreen", "Erro ao vincular a câmera", e)
                 }
             }, ContextCompat.getMainExecutor(ctx))
             previewView
@@ -205,7 +250,6 @@ fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
 }
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
-@OptIn(ExperimentalGetImage::class)
 private fun processImageProxy(
     barcodeScanner: com.google.mlkit.vision.barcode.BarcodeScanner,
     imageProxy: ImageProxy,
@@ -224,7 +268,7 @@ private fun processImageProxy(
             }
         }
         .addOnFailureListener {
-            Log.e("CameraPreviewScreen", "Falha na análise da imagem", it)
+//            Log.e("CameraPreviewScreen", "Falha na análise da imagem", it)
         }
         .addOnCompleteListener {
             // É crucial fechar a ImageProxy para liberar o buffer de imagem

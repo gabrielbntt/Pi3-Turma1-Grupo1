@@ -88,6 +88,9 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.security.SecureRandom
@@ -215,6 +218,7 @@ fun generateAccessToken(): String {
     val randomBytes = ByteArray(32).apply { SecureRandom().nextBytes(this) }
     return android.util.Base64.encodeToString(randomBytes, android.util.Base64.NO_WRAP)
 }
+
 fun updateAccessToken(
     uid: String,
     categoryName: String,
@@ -258,7 +262,8 @@ fun createCategory(uid: String, categories: List<String>) {
         db.collection("Collections")
             .document(uid)
             .collection(categoryName)
-            .add(vazio)
+            .document("2")
+            .set(vazio)
     }
 
     val docRef = db.collection("Collections").document(uid)
@@ -309,6 +314,7 @@ suspend fun fetchCategories(uid: String): List<String> {
     val db = Firebase.firestore
     val docRef = db.collection("Collections").document(uid)
     val snapshot = docRef.get().await()
+
     return snapshot.get("categoriesList") as? List<String> ?: emptyList()
 }
 
@@ -327,7 +333,7 @@ suspend fun fetchPasswordsForCategory(uid: String, category: String): List<Passw
             password = doc.getString("password") ?: "",
             description = doc.getString("description"),
             acesstoken = doc.getString("acesstoken") ?: "",
-            url = "https://smile.com"
+            url = doc.getString("url") ?: "",
         )
     }
 }
@@ -590,7 +596,7 @@ fun PasswordManagerScreen(
                         ) {
                             Image(
                                 painter = painterResource(id = R.drawable.qr_code_logo),
-                                contentDescription = "Ícone QR Code",
+                                contentDescription = "Icone QR Code",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -1177,20 +1183,53 @@ fun DeletePasswordDialog(
         }
     )
 }
-@Preview(showBackground = true)
-@Composable
-fun PasswordManagerScreenPreview() {
-    Pi3_time1Theme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            PasswordManagerScreen(
-                onLogout = {},
-                onNavigateToCategories = {},
-                onNavigateToAccount = {},
-                onNavigateToQrCode = {},
-                snackbarMessage = null,
-                isDarkTheme = false,
-                onToggleTheme = {}
-            )
+
+suspend fun validateLogin(partnerUrl: String, loginToken: String) {
+    Log.d("Main", "Entrou na função validateLogin")
+    val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
+    val db = Firebase.firestore
+    val categoryNames = fetchCategories(uid)
+    coroutineScope {
+        val allPasswords = categoryNames.map { category ->
+            async { fetchPasswordsForCategory(uid, category) }
+        }.awaitAll()
+        val allPasswordsFlat = allPasswords.flatten()
+        Log.d("allPaswordsFlat", "${allPasswordsFlat}")
+
+        val matchingPassword = allPasswordsFlat.find { senha ->
+            senha.url == partnerUrl // ou contains(partnerUrl), etc.
+        }
+
+        if (matchingPassword != null) {
+            Log.d("Url encontrado", "${matchingPassword}")
+
+            // Agora buscamos o nome da categoria e do documento da senha correspondente
+            for (category in categoryNames) {
+                val snapshot = db.collection("Collections")
+                    .document(uid)
+                    .collection(category)
+                    .get()
+                    .await()
+                Log.d("Snapshot", "${snapshot.documents}")
+
+                for (doc in snapshot.documents) {
+                    Log.d("Entrou no for", "${doc}")
+                    if (doc.id == "2") {
+                        Log.d("Ignorado", "Documento com ID '2' ignorado na categoria $category")
+                        continue
+                    }
+                    Log.d("Senha encontrada", "Categoria: ${category}, DocumentoID: ${doc.id}")
+                    db.collection("Collections")
+                        .document(uid)
+                        .collection(category)
+                        .document(doc.id)
+                        .update("acesstoken", loginToken)
+                    return@coroutineScope true
+                }
+            }
+        } else {
+            Log.d("Firestore", "Nenhuma senha compatível encontrada.")
+            return@coroutineScope false
         }
     }
 }
