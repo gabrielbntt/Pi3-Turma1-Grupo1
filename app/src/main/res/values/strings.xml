@@ -8,6 +8,8 @@
     <string name="title_activity_main2">MainActivity2</string>
     <string name="title_activity_reset_password">ResetPasswordActivity</string>
     <string name="title_activity_account">AccountActivity</string>
-    <string name="title_activity_categories">\n</string>
-    <string name="title_activity_Qr_Code_Reader" />
+    <string name="title_activity_categories">CategoriesActivity</string>
+    <string name="title_activity_Qr_Code_Reader">QrCodeReaderActivity</string>
+    <string name="title_activity_launcher" />
+
 </resources>

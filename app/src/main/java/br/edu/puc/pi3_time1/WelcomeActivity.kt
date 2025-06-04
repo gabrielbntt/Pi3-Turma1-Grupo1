@@ -1,3 +1,4 @@
+
 package br.edu.puc.pi3_time1
 
 import android.content.Intent
@@ -5,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +22,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
+import br.edu.puc.pi3_time1.ui.theme.Typography
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
@@ -43,15 +48,11 @@ class WelcomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Inicializar Firebase
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
-
-        // Verificar se o usuário está logado
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            // Usuário está logado, redirecionar para MainActivity
+
             startActivity(Intent(this, MainActivity::class.java))
             finish()
             return
@@ -81,89 +82,67 @@ fun WelcomeScreen(
     onNavigateToSignIn: () -> Unit,
     onNavigateToSignUp: () -> Unit
 ) {
+    val DarkBlue = Color(0xFF253475)
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
+            .padding(24.dp)
             .wrapContentSize(Alignment.Center),
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Logo Super ID
         Image(
-            painter = painterResource(id = R.drawable.superid_icon),
-            contentDescription = "Logo do Super ID",
-            modifier = Modifier
-                .padding(0.dp)
-                .width(79.88.dp)
-                .height(109.99998.dp)
+            painter = painterResource(id = R.drawable.icone_superid),
+            contentDescription = "Icone SuperID",
+            modifier = Modifier.size(120.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "SuperID",
+            fontSize = 68.sp,
+            color = DarkBlue,
+            fontWeight = FontWeight.Black
         )
 
-        // Texto "Super ID"
-        Text(
-            text = "Super ID",
-            fontSize = 64.sp,
-            fontWeight = FontWeight(900),
-            textAlign = TextAlign.Center,
-            color = Color(0xFF253475),
-            modifier = Modifier
-                .padding(16.dp)
-                .width(258.dp)
-                .height(77.dp)
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Texto de descrição
         Text(
-            text = "Gerencie suas senhas com segurança e praticidade",
+            text = "Gerencie suas senhas com\nsegurança e praticidade",
             fontSize = 20.sp,
-            fontWeight = FontWeight(400),
-            color = Color(0xFF000000),
+            color = Black,
             textAlign = TextAlign.Center,
-            modifier = Modifier
-                .width(258.dp)
-                .height(48.dp)
+            fontWeight = FontWeight.Medium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(250.dp))
 
-            // Botão Cadastrar
-        Button(
-            onClick = { onNavigateToSignUp() },
+        OutlinedButton(
+            onClick = onNavigateToSignUp,
+            border = BorderStroke(2.dp, DarkBlue),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = DarkBlue),
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier
                 .width(258.dp)
-                .height(55.dp)
-
+                .height(50.dp)
         ) {
-            Text(
-                text = "Cadastrar",
-                fontSize = 16.sp,
-                fontWeight = FontWeight(700),
-                color = Color(0xFFFFFFFF),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .width(79.dp)
-                    .height(19.dp)
-                )
+            Text(text = "Cadastrar", fontWeight = FontWeight.ExtraBold)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Botão Logar
         Button(
-            onClick = { onNavigateToSignIn() },
+            onClick = onNavigateToSignIn,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DarkBlue,
+                contentColor = White
+            ),
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier
                 .width(258.dp)
-                .height(55.dp)
+                .height(50.dp)
         ) {
-            Text(
-                text = "Logar",
-                fontSize = 16.sp,
-                fontWeight = FontWeight(700),
-                color = Color(0xFFFFFFFF),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .width(45.dp)
-                    .height(19.dp)
-                )
+            Text(text = "Logar", fontWeight = FontWeight.ExtraBold)
         }
     }
 }
@@ -176,8 +155,8 @@ fun WelcomeScreenPreview() {
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
-            onNavigateToSignIn = { /* No-op for preview */ },
-            onNavigateToSignUp = { /* No-op for preview */ },
+            onNavigateToSignIn = { },
+            onNavigateToSignUp = { },
         )
     }
 }

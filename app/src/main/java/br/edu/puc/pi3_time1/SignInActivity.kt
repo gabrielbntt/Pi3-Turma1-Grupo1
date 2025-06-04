@@ -2,21 +2,18 @@ package br.edu.puc.pi3_time1
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,9 +38,22 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.VisualTransformation
+import br.edu.puc.pi3_time1.ui.theme.InterFontFamily
+import kotlin.math.log
 
 class SignInActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
@@ -58,12 +68,229 @@ class SignInActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .wrapContentSize(Alignment.Center),
-                    activity = this@SignInActivity
+                    activity = this@SignInActivity,
+                    onNavigateToSignUp = {
+                        startActivity(Intent(this@SignInActivity, SignUpActivity::class.java))
+                    },
+                    onNavigateWelcome = {
+                        startActivity(Intent(this@SignInActivity, WelcomeActivity::class.java))
+                    },
+                    onNavigateChangePass = {
+                        startActivity(Intent(this@SignInActivity, ChangePasswordActivity::class.java))
+                    },
                 )
             }
         }
     }
 }
+
+
+
+@Composable
+fun SignIn(modifier: Modifier = Modifier,
+           activity: SignInActivity,
+           onNavigateToSignUp: () -> Unit,
+           onNavigateWelcome: () -> Unit,
+           onNavigateChangePass: () -> Unit) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var showErrors by remember { mutableStateOf(false) }
+    var loginError by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
+    val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isPasswordValid = password.isNotBlank()
+    val isFormValid = isEmailValid && isPasswordValid
+
+
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.bot_o_voltar),
+                contentDescription = "Botão Voltar",
+                modifier = Modifier
+                    .clickable{ onNavigateWelcome() }
+            )
+        }
+
+        Text(
+            text = "Bem-vindo de\nvolta ao SuperID",
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 34.sp,
+            lineHeight = 34.sp,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(170.dp))
+
+        OutlinedTextField(
+            modifier = Modifier.width(258.dp),
+            value = email,
+            onValueChange = { email = it },
+            label = { Text(text = "Email", color = Gray) },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                cursorColor = Black,
+                focusedBorderColor = DarkBlue,
+                unfocusedBorderColor = DarkBlue,
+                errorBorderColor = ErrorRed,
+                errorLabelColor = ErrorRed
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true,
+            supportingText = {
+                if (showErrors && email.isBlank()) {
+                    Text(
+                        text = "Preencha este campo.",
+                        color = ErrorRed
+                    )
+                } else if (showErrors && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    Text(
+                        text = "Email inválido.",
+                        color = ErrorRed
+                    )
+                }
+            }
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.width(258.dp),
+            value = password,
+            onValueChange = { password = it },
+            label = { Text(text = "Senha", color = Gray) },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                cursorColor = Black,
+                focusedBorderColor = DarkBlue,
+                unfocusedBorderColor = DarkBlue,
+                errorBorderColor = ErrorRed,
+                errorLabelColor = ErrorRed
+            ),
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = if (showPassword) "Esconder senha" else "Mostrar senha",
+                        tint = DarkBlue
+                    )
+                }
+            },
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            supportingText = {
+                if (showErrors && password.isBlank()) {
+                    Text(
+                        text = "Preencha este campo.",
+                        color = ErrorRed
+                    )
+                }
+            }
+        )
+
+        Text(
+            text = "Esqueci minha senha",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = DarkBlue,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .clickable { onNavigateChangePass() }
+        )
+
+        Spacer(modifier = Modifier.height(170.dp))
+
+        Button(
+            modifier = Modifier
+                .width(258.dp)
+                .height(55.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DarkBlue,
+                contentColor = White
+            ),
+            onClick = {
+                showErrors = true
+
+                if (isFormValid) {
+                    isLoading = true
+                    signIn(
+                        activity = activity,
+                        email = email,
+                        password = password,
+                        onSuccess = { userData ->
+                            isLoading = false
+                            message = "Login realizado com sucesso!"
+                            Toast.makeText(context, "Logado com sucesso!", Toast.LENGTH_LONG).show()
+                            val intent = Intent(activity, MainActivity::class.java).apply {
+                                putExtra("user_name", userData.name)
+                                putExtra("user_email", userData.email)
+                            }
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            activity.startActivity(intent)
+                        },
+                        onFailure = { e ->
+                            isLoading = false
+                            loginError = "Erro: ${e.message}"
+                            message = when {
+                                e.message?.contains("The supplied auth credential is incorrect, malformed or has expired.") == true -> "Email ou senha incorretos"
+                                else -> "Erro ao fazer login: ${e.message}"
+                            }
+                            Log.v("Log Teste", message);
+                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        }
+                    )
+                }
+            },
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(text = "Logar")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Não tem uma conta?",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = DarkBlue,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .clickable { onNavigateToSignUp() }
+        )
+    }
+}
+
+
 
 @Preview(showBackground = true)
 @Composable
@@ -73,166 +300,16 @@ fun SignInPreview() {
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
-            activity = SignInActivity()
+            activity = SignInActivity(),
+            onNavigateToSignUp = { },
+            onNavigateWelcome = { },
+            onNavigateChangePass = { }
         )
     }
 }
 
 
-@Composable
-fun SignIn(modifier: Modifier = Modifier, activity: SignInActivity?) {
-    var email by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
 
-    val isEmailValid = email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    val isPasswordValid = senha.length >= 6
-    val isFormValid = isEmailValid && isPasswordValid
-
-    Scaffold(
-        modifier = modifier,
-        content = { padding ->
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Entrar",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    isError = email.isNotEmpty(),
-                    supportingText = {
-                        if (email.isNotEmpty()) {
-                            Text("Email inválido")
-                        }
-                    }
-                )
-                OutlinedTextField(
-                    value = senha,
-                    onValueChange = { senha = it },
-                    label = { Text("Senha") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    isError = senha.isNotEmpty() && !isPasswordValid,
-                    supportingText = {
-                        if (senha.isNotEmpty() && !isPasswordValid) {
-                            Text("A senha deve ter pelo menos 6 caracteres")
-                        }
-                    }
-                )
-
-                Button(
-                    onClick = {
-                        if (email.isEmpty() || senha.isEmpty()) {
-                            message = "Preencha todos os campos."
-                        } else if (!isFormValid) {
-                            message = "Corrija os erros nos campos."
-                        } else {
-                            isLoading = true
-                            signIn(
-                                activity = activity,
-                                email = email,
-                                password = senha,
-                                onSuccess = { userData ->
-                                    isLoading = false
-                                    message = "Login realizado com sucesso!"
-                                    val intent = Intent(activity, MainActivity::class.java).apply {
-                                        putExtra("user_name", userData.name)
-                                        putExtra("user_email", userData.email)
-                                    }
-                                    activity?.startActivity(intent)
-                                    activity?.finish()
-                                },
-                                onFailure = { e ->
-                                    isLoading = false
-                                    message = when {
-                                        e.message?.contains("INVALID_LOGIN_CREDENTIALS") == true -> "Email ou senha incorretos."
-                                        else -> "Erro ao fazer login: ${e.message}"
-                                    }
-                                }
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .width(150.dp) // Largura fixa
-                        .height(48.dp)
-                        .padding(bottom = 16.dp),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(text = "Entrar")
-                    }
-                }
-
-                Text(
-                    text = "Ainda não tem uma conta?",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Button(
-                    onClick = {
-                        activity?.startActivity(Intent(activity, SignUpActivity::class.java))
-                    },
-                    modifier = Modifier
-                        .wrapContentWidth()
-                ) {
-                    Text(text = "Cadastre-se")
-                }
-                Text(
-                    text = "Esqueceu Sua senha?",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
-                Text(
-                    text = "Redefinir Senha",
-                    color = Color.Blue,
-                    textDecoration = TextDecoration.Underline,
-                    fontSize = 16.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 2.dp, bottom = 8.dp) // Ajustado
-                        .clickable {
-                            activity?.startActivity(Intent(activity, ChangePasswordActivity::class.java))
-                        },
-                    textAlign = TextAlign.Center
-                )
-
-                if (message.isNotEmpty()) {
-                    Text(
-                        text = message,
-                        modifier = Modifier.padding(top = 16.dp),
-                        fontSize = 14.sp,
-                        color = if (message.contains("sucesso")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        }
-    )
-}
 fun signIn(
     activity: SignInActivity?,
     email: String,
@@ -258,7 +335,7 @@ fun signIn(
                                 )
                                 onSuccess(userData)
                             } else {
-                                onFailure(Exception("Dados do usuário não encontrados."))
+                                onFailure(Exception("Email ou senha incorretos"))
                             }
                         }
                         .addOnFailureListener { e ->

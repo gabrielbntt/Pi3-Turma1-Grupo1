@@ -1,3 +1,4 @@
+
 package br.edu.puc.pi3_time1.ui.theme
 
 import android.os.Build
@@ -48,7 +49,7 @@ fun Pi3_time1Theme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography,
         content = content
     )
 }
