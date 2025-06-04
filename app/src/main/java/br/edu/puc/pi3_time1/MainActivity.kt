@@ -902,30 +902,32 @@ fun ChooseActionDialog(
     onAddPassword: () -> Unit,
     onAddCategory: () -> Unit
 ) {
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
     AlertDialog(
         containerColor = LightGray,
         onDismissRequest = { onDismiss() },
         title = {
-            Text(text = "ADICIONAR",
-            color = Black,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.ExtraBold) },
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "ADICIONAR SENHA/CATEGORIA",
+                    color = Black,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.ExtraBold)
+              }
+            },
         text = {
             Column {
-                Button(
-                    onClick = onAddPassword,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkBlue,
-                        contentColor = White,
-                        disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
-                        disabledContentColor = White.copy(alpha = 0.6f))
-                ) {
-                    Text("Nova Senha")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = onAddCategory,
                     modifier = Modifier.fillMaxWidth(),
@@ -933,29 +935,128 @@ fun ChooseActionDialog(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DarkBlue,
                         contentColor = White,
-                        disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
-                        disabledContentColor = White.copy(alpha = 0.6f))
+                        )
                 ) {
-                    Text("Nova Categoria")
+                    Text(text = "Nova Categoria", fontWeight = FontWeight.ExtraBold)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onAddPassword,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkBlue,
+                        contentColor = White,
+                        )
+                ) {
+                    Text(text = "Nova Senha", fontWeight = FontWeight.ExtraBold)
                 }
             }
         },
         confirmButton = {},
         dismissButton = {
-            Button(onClick = { onDismiss() },
+            Button(
+                onClick = onDismiss,
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DarkBlue,
                     contentColor = White,
-                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
-                    disabledContentColor = White.copy(alpha = 0.6f))) {
-                Text("Cancelar")
+                    )
+            ) {
+                Text(text = "Cancelar", fontWeight = FontWeight.ExtraBold)
             }
         }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@Composable
+fun AddCategoryDialog(
+    onDismiss: () -> Unit,
+    onSave: (categoryName: String) -> Unit
+) {
+    var categoryName by remember { mutableStateOf("") }
+
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        containerColor = LightGray,
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Adicionar Categoria",
+                    color = Black,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text(text = "Nome da categoria", color = Gray) },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (categoryName.isNotEmpty()) {
+                        onSave(categoryName)
+                    }
+                },
+                enabled = categoryName.isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f)
+                )
+            ) {
+                Text(text = "Salvar", fontWeight = FontWeight.ExtraBold)
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White
+                )
+            ) {
+                Text(text = "Cancelar", fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    )
+}
+
 @Composable
 fun AddPasswordDialog(
     onDismiss: () -> Unit,
@@ -972,21 +1073,30 @@ fun AddPasswordDialog(
     var selectedCategory by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val DarkBlue = Color(0xFF253475)
+    val Gray = Color(0xFF666666)
+    val LightGray = Color(0xFFDDDDDD)
+    val SuccessGreen = Color(0xFF07AE33)
+    val ErrorRed = Color(0xFFFF1717)
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
         containerColor = LightGray,
-        title = { Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Adicionar Senha",
-                color = Black,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Adicionar Senha",
+                    color = Black,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
         },
         text = {
             Column {
@@ -1062,11 +1172,11 @@ fun AddPasswordDialog(
                     ),
                     singleLine = true
                 )
-
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Usuário (Opcional)", color = Gray) },
+                    label = { Text(text = "Usuário (opcional)", color = Gray) },
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Black,
@@ -1107,13 +1217,21 @@ fun AddPasswordDialog(
                     ),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Descrição (Opcional)", color = Gray) },
+                    label = { Text(text = "Descrição (opcional)", color = Gray) },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
             }
@@ -1137,92 +1255,28 @@ fun AddPasswordDialog(
                     containerColor = DarkBlue,
                     contentColor = White,
                     disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
-                    disabledContentColor = White.copy(alpha = 0.6f))
-
+                    disabledContentColor = White.copy(alpha = 0.6f)
+                )
             ) {
                 Text("Salvar", fontWeight = FontWeight.ExtraBold)
             }
         },
         dismissButton = {
-            Button(onClick = {
-                onDismiss()
-            },
+            Button(
+                onClick = onDismiss,
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DarkBlue,
                     contentColor = White
                 )
             ) {
-                Text("Cancelar")
+                Text(text = "Cancelar", fontWeight = FontWeight.ExtraBold)
             }
         }
     )
 }
 
-@Composable
-fun AddCategoryDialog(
-    onDismiss: () -> Unit,
-    onSave: (categoryName: String) -> Unit
-) {
-    var categoryName by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        containerColor = LightGray,
-        title = { Text("Adicionar Nova Categoria",
-            color = Black,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.ExtraBold) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = categoryName,
-                    onValueChange = { categoryName = it },
-                    label = { Text("Nome da Categoria") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Black,
-                        unfocusedTextColor = Black,
-                        cursorColor = Black,
-                        focusedBorderColor = DarkBlue,
-                        unfocusedBorderColor = DarkBlue,
-                        errorBorderColor = ErrorRed,
-                        errorLabelColor = ErrorRed
-                    ),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (categoryName.isNotEmpty()) {
-                        onSave(categoryName)
-                    }
-                },
-                enabled = categoryName.isNotEmpty(),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkBlue,
-                    contentColor = White,
-                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
-                    disabledContentColor = White.copy(alpha = 0.6f))
-            ) {
-                Text("Salvar")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkBlue,
-                    contentColor = White)) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
 @Composable
 fun EditPasswordDialog(
     currentPassword: PasswordEntry,
