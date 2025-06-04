@@ -220,7 +220,6 @@ fun CameraPreviewScreen(onQrCodeDetected: (String) -> Unit) {
                     .also {
                         it.setAnalyzer(cameraExecutor) { imageProxy ->
                             processImageProxy(barcodeScanner, imageProxy) { barcode ->
-                                // Chama o callback quando um QR Code é detectado
                                 onQrCodeDetected(barcode)
                                 if (barcode.isNotBlank()) {
                                     verificarToken(barcode, firestore, activity)

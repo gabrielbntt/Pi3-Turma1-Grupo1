@@ -55,6 +55,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
 import androidx.compose.ui.text.TextStyle
+import br.edu.puc.pi3_time1.ui.theme.Black
+import br.edu.puc.pi3_time1.ui.theme.DarkBlue
+import br.edu.puc.pi3_time1.ui.theme.LightGray
+import br.edu.puc.pi3_time1.ui.theme.White
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -248,7 +252,7 @@ fun Categories(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Categorias",
+                text = "Suas Categorias",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -323,6 +327,7 @@ fun Categories(
                 DeleteCategoryDialog(
                     uid = uid,
                     categoryName = categoryToDelete!!,
+
                     onDismiss = {
                         showDeleteDialog = false
                         categoryToDelete = null
@@ -432,8 +437,13 @@ fun EditCategoryDialog(
     var categoryName by remember { mutableStateOf(nomeAtual) }
 
     AlertDialog(
+        containerColor = LightGray,
         onDismissRequest = { onDismiss() },
-        title = { Text("Editar Nome da Categoria") },
+        title = { Text("Editar Categoria",
+            color = Black,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.ExtraBold) },
         text = {
             Column {
                 OutlinedTextField(
@@ -452,13 +462,25 @@ fun EditCategoryDialog(
                         onSave(categoryName)
                     }
                 },
-                enabled = categoryName.isNotEmpty()
+                enabled = categoryName.isNotEmpty(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f))
             ) {
                 Text("Salvar")
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = { onDismiss() },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f))) {
                 Text("Cancelar")
             }
         }
@@ -473,6 +495,7 @@ fun DeleteCategoryDialog(
     uid: String
 ) {
     AlertDialog(
+        containerColor = LightGray,
         onDismissRequest = { onDismiss() },
         title = { Text("Tem Certeza que deseja excluir a Categoria?") },
         text = {
@@ -487,13 +510,21 @@ fun DeleteCategoryDialog(
             Button(
                 onClick = {
                     onConfirm()
-                }
+                },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White)
             ) {
                 Text("Confirmar")
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = { onDismiss() },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White)) {
                 Text("Cancelar")
             }
         }

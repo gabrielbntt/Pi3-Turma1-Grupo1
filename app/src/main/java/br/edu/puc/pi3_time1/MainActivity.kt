@@ -2,6 +2,7 @@ package br.edu.puc.pi3_time1
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,8 +32,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -230,43 +233,9 @@ fun deletePasswordByTitle(uid: String, categoryName: String, title: String) {
 
 fun generateAccessToken(): String {
     val randomBytes = ByteArray(32).apply { SecureRandom().nextBytes(this) }
-    return android.util.Base64.encodeToString(randomBytes, android.util.Base64.NO_WRAP)
+    return Base64.encodeToString(randomBytes, Base64.NO_WRAP)
 }
-fun updateAccessToken(
-    uid: String,
-    categoryName: String,
-    title: String,
-    newAccessToken: String,
-    onSuccess: () -> Unit,
-    onFailure: (Exception) -> Unit
-) {
-    val db = Firebase.firestore
 
-    db.collection("Collections")
-        .document(uid)
-        .collection(categoryName)
-        .whereEqualTo("title", title)
-        .get()
-        .addOnSuccessListener { querySnapshot ->
-            if (querySnapshot.isEmpty) {
-                onFailure(Exception("Entrada não encontrada para o título: $title"))
-                return@addOnSuccessListener
-            }
-            val document = querySnapshot.documents.first()
-
-            document.reference
-                .update("acesstoken", newAccessToken)
-                .addOnSuccessListener {
-                    onSuccess()
-                }
-                .addOnFailureListener { e ->
-                    onFailure(e)
-                }
-        }
-        .addOnFailureListener { e ->
-            onFailure(e)
-        }
-}
 fun createCategory(uid: String, categories: List<String>) {
     val db = Firebase.firestore
     val vazio = hashMapOf("placeholder" to true)
@@ -353,9 +322,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Pi3_time1Theme {
+            var isDarkTheme by remember { mutableStateOf(false) }
+
+            Pi3_time1Theme (darkTheme = isDarkTheme){
                 Surface(modifier = Modifier.fillMaxSize()) {
                     PasswordManagerScreen(
+                        isDarkTheme = isDarkTheme,
+                        onToggleTheme = { isDarkTheme = !isDarkTheme },
                         onNavigateToCategories = {
                             startActivity(Intent(this@MainActivity, CategoriesActivity::class.java))
                         },
@@ -386,6 +359,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordManagerScreen(
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     onLogout: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToAccount: () -> Unit,
@@ -471,9 +446,30 @@ fun PasswordManagerScreen(
                     onClick = { onLogout() },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = onToggleTheme,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = ButtonDefaults.buttonElevation(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(if (isDarkTheme) "Modo Claro" else "Modo Escuro")
+                        }
             }
         }
-    ) {
+    )
+          {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -909,19 +905,36 @@ fun ChooseActionDialog(
     AlertDialog(
         containerColor = LightGray,
         onDismissRequest = { onDismiss() },
-        title = { Text("Adicionar") },
+        title = {
+            Text(text = "ADICIONAR",
+            color = Black,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.ExtraBold) },
         text = {
             Column {
                 Button(
                     onClick = onAddPassword,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkBlue,
+                        contentColor = White,
+                        disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                        disabledContentColor = White.copy(alpha = 0.6f))
                 ) {
                     Text("Nova Senha")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = onAddCategory,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkBlue,
+                        contentColor = White,
+                        disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                        disabledContentColor = White.copy(alpha = 0.6f))
                 ) {
                     Text("Nova Categoria")
                 }
@@ -929,7 +942,13 @@ fun ChooseActionDialog(
         },
         confirmButton = {},
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = { onDismiss() },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkBlue,
+                    contentColor = White,
+                    disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                    disabledContentColor = White.copy(alpha = 0.6f))) {
                 Text("Cancelar")
             }
         }
@@ -1150,7 +1169,11 @@ fun AddCategoryDialog(
     AlertDialog(
         onDismissRequest = { onDismiss() },
         containerColor = LightGray,
-        title = { Text("Adicionar Nova Categoria") },
+        title = { Text("Adicionar Nova Categoria",
+            color = Black,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.ExtraBold) },
         text = {
             Column {
                 OutlinedTextField(
@@ -1213,7 +1236,12 @@ fun EditPasswordDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Editar Senha") },
+        containerColor = LightGray,
+        title = { Text("Editar Senha",
+            color = Black,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.ExtraBold) },
         text = {
             Column {
                 OutlinedTextField(
@@ -1221,6 +1249,15 @@ fun EditPasswordDialog(
                     onValueChange = { title = it },
                     label = { Text("Título") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1228,7 +1265,15 @@ fun EditPasswordDialog(
                     value = username,
                     onValueChange = { username = it },
                     label = { Text("Usuário (Opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1239,6 +1284,15 @@ fun EditPasswordDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1247,6 +1301,15 @@ fun EditPasswordDialog(
                     onValueChange = { description = it },
                     label = { Text("Descrição (Opcional)") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        cursorColor = Black,
+                        focusedBorderColor = DarkBlue,
+                        unfocusedBorderColor = DarkBlue,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed
+                    ),
                     singleLine = true
                 )
             }
@@ -1287,7 +1350,7 @@ fun DeletePasswordDialog(
         text = {
             Column {
                 Text(
-                    text = "Atenção: Ao excluir a senha '${passwordTitle}', " +
+                    text = "Atenção: Ao excluir a senha '${passwordTitle}',"  +
                             "ela será permanentemente removida."
                 )
             }
@@ -1318,7 +1381,9 @@ fun PasswordManagerScreenPreview() {
                 onNavigateToCategories = {},
                 onNavigateToAccount = {},
                 onNavigateToQrCode = {},
-                snackbarMessage = null
+                snackbarMessage = null,
+                isDarkTheme = false,
+                onToggleTheme = {}
             )
         }
     }
@@ -1337,13 +1402,11 @@ suspend fun validateLogin(partnerUrl: String, loginToken: String) {
         Log.d("allPaswordsFlat", "${allPasswordsFlat}")
 
         val matchingPassword = allPasswordsFlat.find { senha ->
-            senha.url == partnerUrl // ou contains(partnerUrl), etc.
+            senha.url == partnerUrl
         }
 
         if (matchingPassword != null) {
             Log.d("Url encontrado", "${matchingPassword}")
-
-            // Agora buscamos o nome da categoria e do documento da senha correspondente
             for (category in categoryNames) {
                 val snapshot = db.collection("Collections")
                     .document(uid)

@@ -134,7 +134,6 @@ fun SignUp(modifier: Modifier = Modifier,
 
     val context = LocalContext.current
 
-    // Obter o identificador do dispositivo quando o Composable é inicializado
     LaunchedEffect(key1 = true) {
         imei = getImei(context)
         if (imei != null) {
@@ -271,7 +270,7 @@ fun SignUp(modifier: Modifier = Modifier,
                     )
                 } else if (showErrors && !(password.matches(Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@\$!%*?&^#()\\[\\]{}<>.,;:_+=|~`\\-]).{8,}\$")))) {
                     Text(
-                        text = "A senha deve conter ao menos 8 caracteres.\nA senha deve ter uma letra maiúscula e uma minúscula.\nA senha deve ter um número.\nA senha deve ter um caractere especial.",
+                        text = "Sua senha não se encaixa no padrão solicitad!",
                         color = ErrorRed,
                     )
                 }
@@ -395,16 +394,16 @@ fun SignUp(modifier: Modifier = Modifier,
                 contentColor = White
             ),
             onClick = {
-                showErrors = true // Ativa a exibição dos erros
+                showErrors = true
 
                 if (isFormValid) {
-                    isLoading = true // ativa a barra de loading do cadastro
+                    isLoading = true
                     createNewAccount(
                         activity = activity,
                         email = email,
                         password = password,
                         name = name,
-                        imei = imei!!, // imei já foi validado em isFormValid
+                        imei = imei!!,
                         onSuccess = {
                             isLoading = false
                             message = "Conta criada! Verifique seu email."
@@ -466,7 +465,6 @@ fun SignUpPreview() {
 }
 
 fun getImei(context: Context): String {
-    // Retorna o ANDROID_ID como identificador do dispositivo
     return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 }
 
@@ -481,7 +479,6 @@ fun createNewAccount(
     onFailure: (Exception) -> Unit
 ) {
     val auth = Firebase.auth
-    val obfuscatedPassword = obfuscatePassword(password, imei)
 
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener(activity) { task ->
@@ -501,7 +498,6 @@ fun createNewAccount(
                                             userId = userId,
                                             name = name,
                                             email = email,
-                                            obfuscatedPassword = obfuscatedPassword,
                                             imei = imei,
                                             onSuccess = onSuccess,
                                             onFailure = onFailure
@@ -527,7 +523,6 @@ fun saveAccountToFirebase(
     userId: String,
     name: String,
     email: String,
-    obfuscatedPassword: String,
     imei: String,
     onSuccess: () -> Unit,
     onFailure: (Exception) -> Unit
@@ -537,7 +532,6 @@ fun saveAccountToFirebase(
         "name" to name,
         "email" to email,
         "uid" to userId,
-        "password" to obfuscatedPassword,
         "imei" to imei
     )
 

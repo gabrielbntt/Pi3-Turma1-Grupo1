@@ -21,7 +21,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.edu.puc.pi3_time1.ui.theme.DarkBlue
 import br.edu.puc.pi3_time1.ui.theme.Pi3_time1Theme
+import br.edu.puc.pi3_time1.ui.theme.White
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Firebase
@@ -29,6 +31,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.launch
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+
 class AccountActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
 
@@ -90,10 +96,12 @@ fun AccountHandler(
     onNavigateToMain: () -> Unit,
     resendEmail: Task<Void>
 ) {
+    val scope = rememberCoroutineScope()
     var userData by remember { mutableStateOf<UserData?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var verifiedText by remember { mutableStateOf<String>("Verificando...") }
     var isVerified by remember { mutableStateOf<Boolean?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         val userId = Firebase.auth.currentUser?.uid
@@ -211,9 +219,27 @@ fun AccountHandler(
                         text = "Senha e autenticação"
                     )
                     Button(
-                        onClick = onNavigateToChangePassword,
+                        onClick = {
+                            when (isVerified){
+                                true-> onNavigateToChangePassword()
+                            false -> {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Por favor, verifique seu email para alterar sua senha mestre!",
+                                    actionLabel = "OK",
+                                    duration = SnackbarDuration.Long
+                                )
+                            }
+                        }
+                            null -> {}
+                        }
+                        },
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF253475)
+                            containerColor = DarkBlue,
+                            contentColor = White,
+                            disabledContainerColor = DarkBlue.copy(alpha = 0.3f),
+                            disabledContentColor = White.copy(alpha = 0.6f)
                         )
                     ) {
                         Text(text = "Alterar senha", color = Color.White)

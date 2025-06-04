@@ -47,15 +47,11 @@ class WelcomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Inicializar Firebase
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
-
-        // Verificar se o usuário está logado
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            // Usuário está logado, redirecionar para MainActivity
+
             startActivity(Intent(this, MainActivity::class.java))
             finish()
             return
@@ -88,7 +84,6 @@ fun WelcomeScreen(
     val DarkBlue = Color(0xFF253475)
     val White = Color(0xFFFFFFFF)
     val Black = Color(0xFF000000)
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -101,9 +96,7 @@ fun WelcomeScreen(
             contentDescription = "Icone SuperID",
             modifier = Modifier.size(120.dp)
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
         Text(
             text = "SuperID",
             fontSize = 68.sp,
@@ -161,8 +154,8 @@ fun WelcomeScreenPreview() {
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center),
-            onNavigateToSignIn = { /* No-op for preview */ },
-            onNavigateToSignUp = { /* No-op for preview */ },
+            onNavigateToSignIn = { },
+            onNavigateToSignUp = { },
         )
     }
 }
