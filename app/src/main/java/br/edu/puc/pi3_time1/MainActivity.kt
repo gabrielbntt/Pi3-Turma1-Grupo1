@@ -1,4 +1,4 @@
-package br.edu.puc.pi3_time1
+ package br.edu.puc.pi3_time1
 
 import android.content.Intent
 import android.os.Bundle
@@ -112,6 +112,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.security.SecureRandom
 
+ // class para as senhas das categorias
 data class PasswordEntry(
     val title: String,
     val username: String?,
@@ -120,12 +121,12 @@ data class PasswordEntry(
     val acesstoken: String,
     val url: String
 )
-
+// class para as categorias
 data class Category(
     val name: String,
     val services: List<PasswordEntry>
 )
-
+// funcao que confere se o email esta verificado e retorna um booleano no onResult
 fun checkEmailVerification(onResult: (Boolean) -> Unit) {
     val auth = FirebaseAuth.getInstance()
     val user = auth.currentUser
@@ -149,7 +150,7 @@ fun checkEmailVerification(onResult: (Boolean) -> Unit) {
             onResult(false)
         }
 }
-
+ // adiciona um campo de hasEmailVerified para o usuario caso esteja verificado
 private fun updateEmailVerificationStatus(uid: String) {
     val db = FirebaseFirestore.getInstance()
     val userDocRef = db.collection("Users").document(uid)
@@ -254,6 +255,7 @@ fun createCategory(uid: String, categories: List<String>) {
         }
 }
 
+ // criptografia das senhas salvas pelo usuario
 fun obfuscatePassword(password: String, salt: String): String {
     val shift = salt.last().code % 26
     return password.map { char ->
@@ -382,7 +384,8 @@ fun PasswordManagerScreen(
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
     var isVerified by remember { mutableStateOf<Boolean?>(null) }
-    var refreshTrigger by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(false) } // refresh trigger atualiza a
+                                                                // pagina apos uma acao
     LaunchedEffect(Unit) {
         checkEmailVerification { result ->
             isVerified = result
@@ -390,6 +393,7 @@ fun PasswordManagerScreen(
     }
 
     LaunchedEffect(snackbarMessage) {
+        // as snackbars devolvem feedback ao usuario
         if (!snackbarMessage.isNullOrEmpty()) {
             scope.launch {
                 snackbarHostState.showSnackbar(
@@ -417,7 +421,7 @@ fun PasswordManagerScreen(
                             it.title.contains(searchQuery.text, ignoreCase = true)
                 }
     }
-
+// Drawer do menu
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -475,6 +479,7 @@ fun PasswordManagerScreen(
                 TopAppBar(
                     title = {
                         OutlinedTextField(
+                            // barra de pesquisa
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Pesquisar") },
@@ -488,7 +493,7 @@ fun PasswordManagerScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
+                        IconButton(onClick = { // abre o menu ao clicar no icone
                             scope.launch { drawerState.open() }
                         }) {
                             Icon(
@@ -504,6 +509,7 @@ fun PasswordManagerScreen(
                     ))
             },
             floatingActionButton = {
+                //botao flutuante de adicionar categoria/senha
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -536,7 +542,7 @@ fun PasswordManagerScreen(
                             Button(
                                 onClick = {
                                     when (isVerified) {
-                                        true -> onNavigateToQrCode()
+                                        true -> onNavigateToQrCode() // vai para activity de scannear QrCode
                                         false -> {
                                             scope.launch {
                                                 snackbarHostState.showSnackbar(
@@ -619,6 +625,7 @@ fun PasswordManagerScreen(
     }
 
     if (showChooseActionDialog) {
+
         ChooseActionDialog(
             onDismiss = { showChooseActionDialog = false },
             onAddPassword = {
@@ -898,6 +905,7 @@ fun PasswordCard(
 
 @Composable
 fun ChooseActionDialog(
+    // pop-up de escolher entre adicionar senha ou categoria
     onDismiss: () -> Unit,
     onAddPassword: () -> Unit,
     onAddCategory: () -> Unit
@@ -972,6 +980,7 @@ fun ChooseActionDialog(
 
 @Composable
 fun AddCategoryDialog(
+    // pop-up de adicionar categoria
     onDismiss: () -> Unit,
     onSave: (categoryName: String) -> Unit
 ) {
@@ -1025,6 +1034,7 @@ fun AddCategoryDialog(
         },
         confirmButton = {
             Button(
+                // Salva a nova categoria
                 onClick = {
                     if (categoryName.isNotEmpty()) {
                         onSave(categoryName)
@@ -1059,13 +1069,14 @@ fun AddCategoryDialog(
 
 @Composable
 fun AddPasswordDialog(
+    // Pop-Up de Adicionar senha
     onDismiss: () -> Unit,
     onSave: (title: String, username: String?, password: String, description: String?, categoryName: String) -> Unit,
     uid: String,
     categories: List<String>,
     accessToken: String
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("") } //titulo seria serviço como Netflix etc
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -1128,6 +1139,7 @@ fun AddPasswordDialog(
                         )
                     }
                     DropdownMenu(
+                        // menu que mostra as senhas ao abrir uma categoria
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         modifier = Modifier
@@ -1238,6 +1250,7 @@ fun AddPasswordDialog(
         },
         confirmButton = {
             Button(
+                // Salva as informações digitadas
                 onClick = {
                     if (title.isNotEmpty() && password.isNotEmpty() && selectedCategory.isNotEmpty()) {
                         onSave(
@@ -1279,6 +1292,7 @@ fun AddPasswordDialog(
 
 @Composable
 fun EditPasswordDialog(
+    // Pop-Up de Adicionar categoria
     currentPassword: PasswordEntry,
     onDismiss: () -> Unit,
     onSave: (title: String, username: String?, password: String, description: String?) -> Unit
@@ -1371,6 +1385,7 @@ fun EditPasswordDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    // salva a senha editada
                     if (title.isNotEmpty() && password.isNotEmpty()) {
                         onSave(
                             title,
@@ -1394,6 +1409,7 @@ fun EditPasswordDialog(
 }
 @Composable
 fun DeletePasswordDialog(
+    //Pop-up de excluir senha
     passwordTitle: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
@@ -1444,6 +1460,7 @@ fun PasswordManagerScreenPreview() {
 }
 
 suspend fun validateLogin(partnerUrl: String, loginToken: String) {
+    // função de validar o login por qr code
     Log.d("Main", "Entrou na função validateLogin")
     val uid = Firebase.auth.currentUser?.uid ?: "default_uid"
     val db = Firebase.firestore

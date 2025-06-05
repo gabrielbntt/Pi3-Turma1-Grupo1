@@ -77,6 +77,7 @@ class QrCodeReaderActivity : ComponentActivity() {
 }
 
 fun verificarToken(loginToken: String, firestore: FirebaseFirestore, activity: Activity) {
+    // confere o loginToken
     val loginRef = firestore.collection("login").document(loginToken)
 
     loginRef.get()
@@ -159,6 +160,7 @@ fun QrCodeScannerScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(onClick = onNavigateBack) {
+                    // volta para a tela principal
                     Text("Retornar")
                 }
             }

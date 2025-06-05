@@ -18,6 +18,11 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 
+// activity que confere se o usuario esta logado ao acessar o app,
+//  toda vez que o usuario entrar/fechar o aplicativo, se estava logado,
+//  eh redirecionado para o signIn, requerindo email e senha mestre,
+//  se nao estiver ou for a primeira vez que ele acessa vai direto ,
+//  para a tela de bem vindo!
 class LauncherActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +33,6 @@ class LauncherActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Pi3_time1Theme {
-
                         if (user != null) {
                             startActivity(Intent(this, SignInActivity::class.java))
                         } else {

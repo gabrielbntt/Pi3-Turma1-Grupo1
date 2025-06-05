@@ -123,6 +123,7 @@ fun SignIn(modifier: Modifier = Modifier,
             horizontalArrangement = Arrangement.Start
         ) {
             Image(
+                //botao para voltar a tela de inicio
                 painter = painterResource(id = R.drawable.bot_o_voltar),
                 contentDescription = "Botão Voltar",
                 modifier = Modifier
@@ -211,6 +212,7 @@ fun SignIn(modifier: Modifier = Modifier,
         )
 
         Text(
+            //redireciona para a activity de recuperar senha
             text = "Esqueci minha senha",
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
@@ -232,6 +234,7 @@ fun SignIn(modifier: Modifier = Modifier,
                 contentColor = White
             ),
             onClick = {
+                // botao de fazer login
                 showErrors = true
 
                 if (isFormValid) {
@@ -279,6 +282,7 @@ fun SignIn(modifier: Modifier = Modifier,
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
+            // texto clicavel que redireciona para a tela de cadastro
             text = "Não tem uma conta?",
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
@@ -311,6 +315,7 @@ fun SignInPreview() {
 
 
 fun signIn(
+    //funcao de conferir os dados do usuario no banco de dados
     activity: SignInActivity?,
     email: String,
     password: String,

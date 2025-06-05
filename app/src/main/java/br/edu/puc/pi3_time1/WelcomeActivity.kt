@@ -47,15 +47,6 @@ class WelcomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        FirebaseApp.initializeApp(this)
-        auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-            return
-        }
         enableEdgeToEdge()
         setContent {
             Pi3_time1Theme {
@@ -117,6 +108,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(250.dp))
 
         OutlinedButton(
+            //botao de ir para o cadastro
             onClick = onNavigateToSignUp,
             border = BorderStroke(2.dp, DarkBlue),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = DarkBlue),
@@ -131,6 +123,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         Button(
+            //botao de ir para o login
             onClick = onNavigateToSignIn,
             colors = ButtonDefaults.buttonColors(
                 containerColor = DarkBlue,

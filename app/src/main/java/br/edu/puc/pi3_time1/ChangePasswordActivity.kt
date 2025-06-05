@@ -137,6 +137,8 @@ fun ChangePassword(
             )
 
             Button(
+                //botao de enviar o email de recuperacao/alteracao de senha
+                //caso nao tenha verificado o email, nao consegue alterar a senha mestre.
                 onClick = {
                     if (email.isEmpty()) {
                         scope.launch {
@@ -206,6 +208,7 @@ fun ChangePassword(
 }
 
 fun sendEmail(auth: FirebaseAuth, email: String, onResult: (String) -> Unit) {
+    //funcao de enviar o email
     auth.sendPasswordResetEmail(email)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {

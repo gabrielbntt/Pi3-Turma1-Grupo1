@@ -61,6 +61,11 @@
             android:theme="@style/Theme.Pi3_time1" />
         <activity
             android:name=".WelcomeActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Pi3_time1"/>
+        <activity
+            android:name=".LauncherActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Pi3_time1">

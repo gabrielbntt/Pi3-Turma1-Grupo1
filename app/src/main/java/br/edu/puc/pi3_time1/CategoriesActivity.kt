@@ -289,7 +289,7 @@ fun Categories(
                                 fontWeight = FontWeight(800)
                             ),
                             trailingIcon = {
-                                if (category != "Sites Web") {
+                                if (category != "SitesWeb") {
                                     Row {
                                         IconButton(
                                             onClick = {
@@ -407,6 +407,7 @@ fun Categories(
             }
             Spacer(modifier = Modifier.height(20.dp))
             Button(
+                //botao de retornar a pagina principal
                 onClick = { onNavigateToMainActivity() },
                 modifier = Modifier
                     .border(width = 2.dp, Color(0xFF000000), shape = RoundedCornerShape(size = 100.dp))
@@ -430,6 +431,7 @@ fun Categories(
 
 @Composable
 fun EditCategoryDialog(
+    //Pop-up de Editar Categoria
     nomeAtual: String,
     onDismiss: () -> Unit,
     onSave: (novoNome: String) -> Unit
@@ -457,6 +459,7 @@ fun EditCategoryDialog(
         },
         confirmButton = {
             Button(
+                //botao que salva as alteracoes
                 onClick = {
                     if (categoryName.isNotEmpty()) {
                         onSave(categoryName)
@@ -474,6 +477,7 @@ fun EditCategoryDialog(
             }
         },
         dismissButton = {
+            //botao de cancelar operacao
             Button(onClick = { onDismiss() },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -489,6 +493,7 @@ fun EditCategoryDialog(
 
 @Composable
 fun DeleteCategoryDialog(
+    //Pop-up de exclusao de senha
     categoryName: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
@@ -509,6 +514,7 @@ fun DeleteCategoryDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    //botao de confirmar a exclusao
                     onConfirm()
                 },
                 shape = RoundedCornerShape(8.dp),
@@ -520,6 +526,7 @@ fun DeleteCategoryDialog(
             }
         },
         dismissButton = {
+            //botao de cancelar a exclusao
             Button(onClick = { onDismiss() },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(

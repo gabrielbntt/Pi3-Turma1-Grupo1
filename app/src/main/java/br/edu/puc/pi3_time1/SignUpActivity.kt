@@ -251,6 +251,7 @@ fun SignUp(modifier: Modifier = Modifier,
                 errorLabelColor = ErrorRed
             ),
             trailingIcon = {
+                //botao de ver a senha digitada
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
                         imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
@@ -299,6 +300,7 @@ fun SignUp(modifier: Modifier = Modifier,
                 errorLabelColor = ErrorRed
             ),
             trailingIcon = {
+                //icone que permite o usuario visualizar o que esta digitando
                 IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
                     Icon(
                         imageVector = if (showConfirmPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
@@ -332,6 +334,7 @@ fun SignUp(modifier: Modifier = Modifier,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
+                //checkbox dos termos de uso
                 colors = CheckboxDefaults.colors(
                     checkedColor = DarkBlue,
                     uncheckedColor = DarkBlue,
@@ -369,9 +372,9 @@ fun SignUp(modifier: Modifier = Modifier,
                 title = { Text("Termos de Uso") },
                 text = {
                     Text(
-                        "• O SuperID protege seus dados com criptografia.\n" +
-                                "• Não compartilhamos suas informações sem consentimento.\n" +
-                                "• Você é responsável por manter sua senha mestre segura."
+                        "• O SuperID protege seus dados com criptografia de ponta a ponta, garantindo a confidencialidade e a integridade das informações armazenadas e transmitidas.\n"+
+                    "• Não compartilhamos suas informações pessoais com terceiros.\n"+
+                    "• Você é o único responsável por manter sua senha mestre segura."
                     )
                 },
                 confirmButton = {
@@ -385,6 +388,7 @@ fun SignUp(modifier: Modifier = Modifier,
         Spacer(modifier = Modifier.height(60.dp))
 
         Button(
+            //botao de realizar o cadastro
             modifier = Modifier
                 .width(258.dp)
                 .height(55.dp),
@@ -470,6 +474,7 @@ fun getImei(context: Context): String {
 
 
 fun createNewAccount(
+    //funcao de criar a conta
     activity: SignUpActivity,
     email: String,
     password: String,
@@ -520,6 +525,7 @@ fun createNewAccount(
 }
 
 fun saveAccountToFirebase(
+    // funcao de salvar a conta no banco
     userId: String,
     name: String,
     email: String,

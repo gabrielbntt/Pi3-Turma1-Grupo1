@@ -158,7 +158,8 @@ fun AccountHandler(
                 },
                 containerColor = Color(0xFF253475)
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -219,11 +220,13 @@ fun AccountHandler(
                         text = "Senha e autenticação"
                     )
                     Button(
+                        // se o usuario tiver o email verificado redireciona para a activity de alterar senha
                         onClick = {
                             when (isVerified){
                                 true-> onNavigateToChangePassword()
                             false -> {
                             scope.launch {
+                                // da feedback para o usuario
                                 snackbarHostState.showSnackbar(
                                     message = "Por favor, verifique seu email para alterar sua senha mestre!",
                                     actionLabel = "OK",
@@ -250,6 +253,7 @@ fun AccountHandler(
                 }
                 else{
                 Text(
+                    //caso precise reenviar o email, esse texto clicavel faz a funcao
                     text = "Reenviar email de verificação",
                     color = Color.Blue,
                     textDecoration = TextDecoration.Underline,
@@ -264,6 +268,7 @@ fun AccountHandler(
 
                 )}
                 Button(
+                    //botao de voltar para a tela principal
                     onClick = onNavigateToMain,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF253475)
