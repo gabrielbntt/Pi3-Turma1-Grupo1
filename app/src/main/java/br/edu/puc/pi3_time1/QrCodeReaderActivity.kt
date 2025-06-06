@@ -89,6 +89,10 @@ fun verificarToken(loginToken: String, firestore: FirebaseFirestore, activity: A
                     Log.d("Firestore", "URL do site: $siteUrl")
                     CoroutineScope(Dispatchers.IO).launch {
                         validateLogin(siteUrl, loginToken)
+                        val intent = Intent(activity, MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                        activity.startActivity(intent)
+                        activity.finish()
                     }
                 } else {
                     Log.d("Firestore", "Campo partnerUrl não encontrado no documento")

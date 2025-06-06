@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import com.google.firebase.Timestamp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -100,6 +101,7 @@ import br.edu.puc.pi3_time1.ui.theme.White
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import java.time.LocalDateTime
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -245,7 +247,8 @@ fun createCategory(uid: String, categories: List<String>) {
         db.collection("Collections")
             .document(uid)
             .collection(categoryName)
-            .add(vazio)
+            .document("2")
+            .set(vazio)
     }
 
     val docRef = db.collection("Collections").document(uid)
@@ -1498,11 +1501,21 @@ suspend fun validateLogin(partnerUrl: String, loginToken: String) {
                         .collection(category)
                         .document(doc.id)
                         .update("acesstoken", loginToken)
+                    val updates = hashMapOf<String, Any>(
+                        "status" to "authorized",
+                        "user" to uid,
+                        "authorizedAt" to Timestamp.now()
+                    )
+                    db.collection("login")
+                        .document(loginToken)
+                        .update(updates)
+                    // Snackbar de sucesso aq
                     return@coroutineScope true
                 }
             }
         } else {
             Log.d("Firestore", "Nenhuma senha compatível encontrada.")
+            // Snackbar de falha aq
             return@coroutineScope false
         }
     }

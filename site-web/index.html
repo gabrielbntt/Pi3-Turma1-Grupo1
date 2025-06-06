@@ -1,22 +1,89 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="index.js"></script> 
-    <style src="style.css"></style>
-    <title>Login via SuperID</title>
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Smile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
+    .login-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #3b82f6;
+      margin-bottom: 1rem;
+    }
+
+    .title {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #111827;
+    }
+
+    #btnLogin {
+      background-color: #3b82f6;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-bottom: 1rem;
+    }
+
+    #btnLogin:hover {
+      background-color: #2563eb;
+    }
+
+    #qrcode {
+      margin: 1rem 0;
+    }
+
+    #message {
+      color: #10b981;
+      font-weight: 500;
+      min-height: 1.5rem;
+    }
+
+    .footer {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
 <body>
-    <h1>Login com SuperID</h1>
-    <button id="btnLogin" onclick="gerarQRCode()">Logar com SuperID</button>
+  <div class="login-container">
+    <div class="logo">Smile</div>
+    <div class="title">Login com SuperID</div>
+    <button id="btnLogin" onclick="gerarQRCode()">Entrar com SuperID</button>
 
     <div id="qrcode"></div>
     <div id="message"></div>
-</body>
 
+  </div>
+
+  <script src="index.js"></script>
+</body>
 </html>

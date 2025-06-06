@@ -48,25 +48,6 @@ async function gerarQRCode() {
     }
 };
 
-// async function gerarQRCode() {
-//     const resposta = await fetch(`https://performauth-numlyzkaiq-uc.a.run.app`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//             partnerUrl: 'https://site-parceiro.com',
-//             apiKey: 'APIKEY_TESTE'
-//         })
-//     });
-
-//     const data = await resposta.json();
-//     loginToken = data.loginToken;
-
-//     document.getElementById('qrcode').innerHTML = `
-//                 <img src="${data.qrCode}" alt="QR Code">
-//                 <p>Token: ${loginToken}</p>
-//             `;
-// }
-
 async function verificarStatus() {
     if (!loginToken) return;
 
@@ -80,14 +61,16 @@ async function verificarStatus() {
         const data = await response.json();
 
         if (response.ok) {
-            if (data.status === 'authenticated') {
+            if (data.status === 'authorized') {
                 clearInterval(intervalId);
                 loginToken = '';
                 document.getElementById('qrcode').innerHTML = '';
-                document.getElementById('message').innerText = 'Login confirmado!';
+                document.getElementById('message').innerText = 'Usuário logado com sucesso!';
 
-                alert('Login confirmado! UID: ' + data.uid);
-                // redirecionar o usuário
+                alert('Usuário logado com sucesso! UID: ' + data.uid);
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 5000);
             }
         } else {
             if (response.status === 410) { // token expirado
@@ -101,20 +84,3 @@ async function verificarStatus() {
         console.error(err);
     }
 }
-
-// async function verificarStatus() {
-//     if (!loginToken) {
-//         alert('Gere um QR Code primeiro!');
-//         return;
-//     }
-
-//     const resposta = await fetch(`https://getloginstatus-numlyzkaiq-uc.a.run.app`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({loginToken})
-//     });
-
-//     const data = await resposta.json();
-
-//     document.getElementById('status').innerText = `Status: ${data.status}\nUID: ${data.uid || 'N/A'}`;
-// }
