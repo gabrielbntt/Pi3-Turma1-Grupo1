@@ -93,4 +93,4 @@ Para começar a explorar e desenvolver o Super ID, siga estes passos simples:
 
 O Super ID combina **segurança** 🛡️, **praticidade** ⚡ e **tecnologia moderna** 🛠️ para oferecer uma experiência única de identificação digital. Com login sem senha, proteção de dados robusta e uma interface desenhada com cuidado, é a solução ideal para simplificar sua vida digital! Experimente e descubra o futuro da autenticação! 
 
---- 
+---
